@@ -19,7 +19,7 @@
 1. Clone the repository
 2. Run npm install
 3. Run npm run dev
-4. Open the app in browser (usually http://localhost:5173)
+4. Open the app in browser 
 5. Navigate through routes to verify routing works
 6. Try accessing protected routes to check if restriction is working
 
