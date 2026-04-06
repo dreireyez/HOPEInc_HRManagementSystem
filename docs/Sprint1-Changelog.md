@@ -1,4 +1,4 @@
-#### Sprint 1 Changelog
+# Sprint 1 Changelog
 
 ### ✨ Features Added
 - Initialized project using **Vite + React + Tailwind CSS**
