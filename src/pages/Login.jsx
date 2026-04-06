@@ -25,7 +25,7 @@ export default function LoginPage() {
       <div className="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-primary-container/20 blur-[120px] rounded-full z-0 pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-tertiary-container/10 blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
-      <main className="relative z-10 w-full max-w-md px-6 py-12">
+      <main className="relative z-10 w-full max-w-xl px-6 py-12">
         {/* Glassmorphic Login Card */}
         <div className="bg-[#1E1E2E]/60 backdrop-blur-3xl rounded-xl p-8 md:p-12 shadow-2xl ring-1 ring-on-surface/5">
           

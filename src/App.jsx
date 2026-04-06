@@ -5,7 +5,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
 // Public Pages
-import Login from './pages/Login'; 
+import Login from './pages/Login';
+import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
 
 // Private Pages
@@ -22,6 +23,7 @@ export default function App() {
     <Routes>
       {/* --- PUBLIC ROUTES --- */}
       <Route path="/login" element={<Login />} /> 
+      <Route path="/register" element={<Register />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* --- PRIVATE ROUTES --- */}
