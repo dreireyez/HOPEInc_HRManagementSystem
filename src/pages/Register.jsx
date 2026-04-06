@@ -9,15 +9,38 @@ export default function Register() {
     email: '',
     password: ''
   });
+  
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error for a field when user starts typing
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: null });
+    }
+  };
+
+  const validateForm = () => {
+    let newErrors = {};
+    if (!formData.firstName.trim()) newErrors.firstName = "Required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Required";
+    if (!formData.username.trim()) newErrors.username = "Required";
+    if (!formData.email.includes('@')) newErrors.email = "Invalid email";
+    if (formData.password.length < 6) newErrors.password = "Min 6 characters";
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleRegister = (e) => {
     e.preventDefault();
-    console.log("Registering account:", formData);
+    if (validateForm()) {
+      console.log("Validation passed! Registering account:", formData);
+      // Next Step: Supabase Auth Implementation
+    } else {
+      console.log("Validation failed:", newErrors);
+    }
   };
 
   const handleGoogleRegister = () => {
@@ -27,13 +50,12 @@ export default function Register() {
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex items-center justify-center overflow-hidden neon-flux-bg">
       
-      {/* Decorative Background Orbs (Matched to Login) */}
+      {/* Decorative Background Orbs */}
       <div className="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-primary-container/20 blur-[120px] rounded-full z-0 pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-tertiary-container/10 blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
-      {/* Slightly wider max-width (max-w-xl) to accommodate the name grid */}
       <main className="relative z-10 w-full max-w-xl px-6 py-12">
-        {/* Glassmorphic Register Card (Exact match to Login) */}
+        {/* Glassmorphic Register Card */}
         <div className="bg-[#1E1E2E]/60 backdrop-blur-3xl rounded-xl p-8 md:p-12 shadow-2xl ring-1 ring-on-surface/5">
           
           {/* Brand Identity */}
@@ -62,39 +84,37 @@ export default function Register() {
           </div>
 
           {/* Register Form */}
-          <form className="space-y-5" onSubmit={handleRegister}>
+          <form className="space-y-5" onSubmit={handleRegister} noValidate>
             
             {/* Name Row Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">First Name</label>
                 <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary-container transition-colors">
+                  <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.firstName ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
                     person
                   </span>
                   <input
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary-container/50 transition-all duration-300"
+                    className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.firstName ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
                     placeholder="Jane"
-                    required
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Last Name</label>
                 <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary-container transition-colors">
+                  <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.lastName ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
                     badge
                   </span>
                   <input
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary-container/50 transition-all duration-300"
+                    className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.lastName ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
                     placeholder="Doe"
-                    required
                   />
                 </div>
               </div>
@@ -104,16 +124,15 @@ export default function Register() {
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Username</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary-container transition-colors">
+                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.username ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
                   account_circle
                 </span>
                 <input
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary-container/50 transition-all duration-300"
+                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.username ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
                   placeholder="janedoe_hr"
-                  required
                 />
               </div>
             </div>
@@ -122,17 +141,16 @@ export default function Register() {
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Email Address</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary-container transition-colors">
+                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.email ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
                   alternate_email
                 </span>
                 <input
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary-container/50 transition-all duration-300"
+                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.email ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
                   placeholder="jane.doe@hopehrs.com"
                   type="email"
-                  required
                 />
               </div>
             </div>
@@ -141,17 +159,16 @@ export default function Register() {
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Security Password</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary-container transition-colors">
+                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.password ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
                   lock
                 </span>
                 <input
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-12 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary-container/50 transition-all duration-300"
+                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-12 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.password ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
                   placeholder="••••••••••••"
                   type={showPassword ? "text" : "password"}
-                  required
                 />
                 <button
                   type="button"
@@ -215,7 +232,7 @@ export default function Register() {
         </footer>
       </main>
 
-      {/* Side Decoration: Data Stream (Exact match to Login) */}
+      {/* Side Decoration */}
       <div className="hidden lg:block fixed left-12 top-1/2 -translate-y-1/2 space-y-8 pointer-events-none">
         <div className="w-px h-32 bg-gradient-to-b from-transparent via-primary-container to-transparent opacity-30"></div>
         <div className="text-[10px] [writing-mode:vertical-lr] text-outline-variant tracking-[0.5em] font-bold uppercase">System Integrity: Nominal</div>
