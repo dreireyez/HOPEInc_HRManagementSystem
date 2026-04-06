@@ -16,21 +16,35 @@
 *Updated README with setup and cloning instructions
 
 ## How Do I Test It?
-1. Clone the repository
-2. Run npm install
-3. Run npm run dev
-4. Open the app in browser 
-5. Navigate through routes to verify routing works
-6. Try accessing protected routes to check if restriction is working
+1. **Clone the Repository:**
+   ```bash
+   git clone <YOUR_REPOSITORY_URL>
+   cd hope-hrs
+
+2. **Install Dependencies:**
+    ```bash
+    npm install
+
+3. **Environment Variables**:
+    
+    * Duplicate the `.env.example` file and rename it to `.env`.
+    * Obtain the Supabase Project URL and Anon Key from the DB Engineer (M3) or your Supabase Dashboard.
+    * Populate the variables in your local `.env` file. Never commit the `.env` file.
+
+4. **Run the Development Server:**
+    ```bash
+    npm run dev
+    ```
+    The application will be available at http://localhost:5173
 
 
 ## PR Checklist
-- [x] Branch created from `dev` 
-- [x] Branch name follows naming convention (`feat/`, `fix/`, `db/`, `test/`, `docs/`) 
-- [x] PR title is imperative and specific 
-- [x] All Vitest tests pass (if applicable)
-- [x] No `console.log` statements left in code
-- [x] No `.env` files or secrets committed
-- [x] Merge target is `dev` — **NEVER** merge directly to `main`
+- [/] Branch created from `dev` 
+- [ ] Branch name follows naming convention (`feat/`, `fix/`, `db/`, `test/`, `docs/`) 
+- [ ] PR title is imperative and specific 
+- [ ] All Vitest tests pass (if applicable)
+- [ ] No `console.log` statements left in code
+- [ ] No `.env` files or secrets committed
+- [ ] Merge target is `dev` — **NEVER** merge directly to `main`
 
 *Note: For reference, check the closed requests under the Pull Requests tab on GitHub.*
