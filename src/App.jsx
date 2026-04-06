@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login'; 
+import Register from './pages/Register';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthCallback from './pages/AuthCallback';
@@ -16,6 +17,7 @@ export default function App() {
       {/* Public */}
       {/* Update this line to use your new Login component */}
       <Route path="/login" element={<Login />} /> 
+      <Route path="/register" element={<Register />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Private - Redirects to /login if session is null */}
