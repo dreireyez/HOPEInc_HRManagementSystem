@@ -39,12 +39,12 @@
 
 
 ## PR Checklist
-- [/] Branch created from `dev` 
-- [ ] Branch name follows naming convention (`feat/`, `fix/`, `db/`, `test/`, `docs/`) 
-- [ ] PR title is imperative and specific 
-- [ ] All Vitest tests pass (if applicable)
-- [ ] No `console.log` statements left in code
-- [ ] No `.env` files or secrets committed
-- [ ] Merge target is `dev` — **NEVER** merge directly to `main`
+- [x] Branch created from `dev` 
+- [x] Branch name follows naming convention (`feat/`, `fix/`, `db/`, `test/`, `docs/`) 
+- [x] PR title is imperative and specific 
+- [x] All Vitest tests pass (if applicable)
+- [x] No `console.log` statements left in code
+- [x] No `.env` files or secrets committed
+- [x] Merge target is `dev` — **NEVER** merge directly to `main`
 
 *Note: For reference, check the closed requests under the Pull Requests tab on GitHub.*
