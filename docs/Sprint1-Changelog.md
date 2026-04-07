@@ -13,6 +13,19 @@
   - Deleted Items
   - Auth Callback
 
+
+#### Recorded corresponding PR numbers:
+- **PR-01**: Initial project scaffold
+- **PR-02**: Supabase client initialization
+- **PR-03**: Routing and protected routes setup
+- **PR-04**: Branch protection configuration
+- **PR-05**: Vite + React + Tailwind initial setup  
+- **PR-06**: Supabase client init, .env config  
+- **PR-07**: All HR routes, ProtectedRoute, placeholder pages  
+- **PR-08**: Branch protection rules and PR template  
+- **PR-09**: Updated and moved README.md to /docs  
+- **PR-10**: Remove duplicate README.md file at project root
+
 ### 🔐 Authentication & Backend
 - Set up **Supabase JS client**
 - Configured environment variables (`.env`)
