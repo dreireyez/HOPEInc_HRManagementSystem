@@ -14,8 +14,8 @@ import Dashboard from './pages/Dashboard';
 import EmployeeListPage from './pages/EmployeeListPage';
 import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import JobHistory from './pages/JobHistory';
-import Jobs from './pages/Jobs';
-import Departments from './pages/Departments';
+import JobListPage from './pages/JobListPage';
+import DeptListPage from './pages/DeptListPage';
 import Admin from './pages/Admin';
 import DeletedItems from './pages/DeletedItems';
 
@@ -38,8 +38,8 @@ export default function App() {
           <Route path="/employees" element={<EmployeeListPage userRole="ADMIN" />} />
           <Route path="/employees/:id" element={<EmployeeDetailPage userRole="ADMIN" />} />
           <Route path="/jobhistory" element={<JobHistory />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/departments" element={<Departments />} />
+          <Route path="/jobs" element={<JobListPage userRole="ADMIN" />} />
+          <Route path="/departments" element={<DeptListPage userRole="ADMIN" />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/deleted-items" element={<DeletedItems />} />
         </Route>
