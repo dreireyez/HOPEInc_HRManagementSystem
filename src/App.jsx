@@ -17,7 +17,7 @@ import JobHistory from './pages/JobHistory';
 import JobListPage from './pages/JobListPage';
 import DeptListPage from './pages/DeptListPage';
 import Admin from './pages/Admin';
-import DeletedItems from './pages/DeletedItems';
+import DeletedItemsPage from './pages/DeletedItemsPage';
 
 export default function App() {
   return (
@@ -41,7 +41,7 @@ export default function App() {
           <Route path="/jobs" element={<JobListPage userRole="ADMIN" />} />
           <Route path="/departments" element={<DeptListPage userRole="ADMIN" />} />
           <Route path="/admin" element={<Admin />} />
-          <Route path="/deleted-items" element={<DeletedItems />} />
+          <Route path="/deleted-items" element={<DeletedItemsPage userRole="ADMIN" />} />
         </Route>
       </Route>
 
