@@ -26,7 +26,6 @@ export default function LoginPage() {
         console.error("Login Error:", error.message);
       } else if (data.user) {
         console.log("Login Success! Redirecting to Home...");
-        // Redirecting to '/' because that is where Dashboard lives in App.jsx
         navigate('/'); 
       }
     } catch (err) {
@@ -86,20 +85,43 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline hover:text-on-surface transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline hover:text-on-surface transition-colors"
+                >
                   {showPassword ? "visibility" : "visibility_off"}
                 </button>
               </div>
-              {isError && <p className="text-[11px] text-error font-medium flex items-center gap-1 mt-1 ml-1"><span className="material-symbols-outlined text-xs">info</span>Invalid email or password.</p>}
+
+              {/* ✅ FIXED ERROR MESSAGE */}
+              {isError && (
+                <p
+                  role="alert"
+                  className="text-[11px] text-error font-medium flex items-center gap-1 mt-1 ml-1"
+                >
+                  <span className="material-symbols-outlined text-xs">info</span>
+                  Invalid email or password
+                </p>
+              )}
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-primary-container to-tertiary-container text-white font-bold py-4 rounded-full shadow-lg hover:opacity-90 transition-all duration-200 uppercase tracking-widest text-sm disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-primary-container to-tertiary-container text-white font-bold py-4 rounded-full shadow-lg hover:opacity-90 transition-all duration-200 uppercase tracking-widest text-sm disabled:opacity-50"
+            >
               {loading ? "Authenticating..." : "Login"}
             </button>
           </form>
 
           <div className="mt-10 text-center">
-            <p className="text-on-surface-variant text-sm">Don't have an account? <Link to="/register" className="text-primary-container font-bold hover:text-tertiary ml-1">Register</Link></p>
+            <p className="text-on-surface-variant text-sm">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-primary-container font-bold hover:text-tertiary ml-1">
+                Register
+              </Link>
+            </p>
           </div>
         </div>
       </main>

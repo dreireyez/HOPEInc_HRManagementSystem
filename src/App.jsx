@@ -5,7 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
 // Public Pages
-import Login from './pages/Login';
+import Login from './pages/LoginPage';
 import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
 
