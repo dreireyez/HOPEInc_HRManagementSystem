@@ -19,6 +19,8 @@ import Admin from './pages/Admin';
 import DeletedItems from './pages/DeletedItems';
 import Reports from './pages/Reports';
 
+import SystemStates from './pages/SystemStates';
+
 export default function App() {
   return (
     <Routes>
@@ -42,6 +44,8 @@ export default function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/deleted-items" element={<DeletedItems />} />
           <Route path="/reports" element={<Reports />} />
+
+          <Route path="/system-states" element={<SystemStates />} />
         </Route>
       </Route>
 
