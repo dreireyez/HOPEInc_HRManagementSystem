@@ -17,6 +17,7 @@ import Jobs from './pages/Jobs';
 import Departments from './pages/Departments';
 import Admin from './pages/Admin';
 import DeletedItems from './pages/DeletedItems';
+import Reports from './pages/Reports';
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/departments" element={<Departments />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/deleted-items" element={<DeletedItems />} />
+          <Route path="/reports" element={<Reports />} />
         </Route>
       </Route>
 
