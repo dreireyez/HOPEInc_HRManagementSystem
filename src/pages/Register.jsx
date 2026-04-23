@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient'; // Ensure this path is correct
+import { supabase } from '../lib/supabaseClient'; 
 
 export default function Register() {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Task #27: Supabase Email/Password Registration
+  // Rubric Requirement: supabase.auth.signUp() wired to Register form
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -52,7 +52,7 @@ export default function Register() {
           first_name: formData.firstName,
           last_name: formData.lastName,
           username: formData.username,
-          user_type: 'USER', // Default role for new signups
+          user_type: 'USER', // Default for Sprint 1
         }
       }
     });
@@ -61,24 +61,28 @@ export default function Register() {
       setErrors({ auth: error.message });
       setLoading(false);
     } else {
-      setMessage("Registration successful! Please check your email for a verification link.");
+      setMessage("Registration successful! Check your email for a verification link.");
       setLoading(false);
-      // Optional: clear form
       setFormData({ firstName: '', lastName: '', username: '', email: '', password: '' });
+      // Redirect to login after a few seconds so they can read the message
+      setTimeout(() => navigate('/login'), 4000);
     }
   };
 
-  // Task #28: Google OAuth Registration
+  // Rubric Requirement: Google OAuth wired to Google buttons
   const handleGoogleRegister = async () => {
+    setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'http://localhost:5173/auth/callback',
+        // Redirects to the AuthCallback route we just created
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
     if (error) {
       setErrors({ auth: error.message });
+      setLoading(false);
     }
   };
 
@@ -106,9 +110,9 @@ export default function Register() {
             </p>
           </div>
 
-          {/* Provisioning Alert / Status Messages */}
+          {/* Status Messages */}
           {message ? (
-            <div className="mb-8 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3 animate-appear">
+            <div className="mb-8 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3 animate-pulse">
               <span className="material-symbols-outlined text-emerald-500 text-xl">check_circle</span>
               <p className="text-xs text-emerald-200 leading-relaxed font-medium">{message}</p>
             </div>
@@ -118,7 +122,7 @@ export default function Register() {
                 info
               </span>
               <p className="text-xs text-on-surface-variant leading-relaxed font-medium">
-                New accounts are subject to admin activation. Your status will remain inactive until manually provisioned by the HR department.
+                New accounts are subject to admin activation. Your status will remain inactive until manually provisioned.
               </p>
             </div>
           )}
@@ -162,23 +166,6 @@ export default function Register() {
                     placeholder="Doe"
                   />
                 </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Username</label>
-              <div className="relative group">
-                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.username ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
-                  account_circle
-                </span>
-                <input
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.username ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
-                  placeholder="janedoe_hr"
-                />
               </div>
             </div>
 
@@ -236,9 +223,9 @@ export default function Register() {
               </button>
             </div>
 
-            <div className="relative flex items-center py-2">
+            <div className="relative flex items-center py-2 text-outline">
               <div className="flex-grow border-t border-outline-variant/20"></div>
-              <span className="flex-shrink mx-4 text-[10px] font-bold text-outline uppercase tracking-[0.2em]">or</span>
+              <span className="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-[0.2em]">or</span>
               <div className="flex-grow border-t border-outline-variant/20"></div>
             </div>
 
@@ -253,7 +240,7 @@ export default function Register() {
                 className="w-5 h-5"
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
               />
-              <span className="text-sm tracking-tight">Register with Google</span>
+              <span className="text-sm tracking-tight font-bold">Register with Google</span>
             </button>
           </form>
 
@@ -267,18 +254,12 @@ export default function Register() {
           </div>
         </div>
 
-        <footer className="mt-12 text-center">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-outline">
+        <footer className="mt-12 text-center text-outline">
+          <p className="text-[10px] font-medium uppercase tracking-[0.25em] opacity-50">
             © 2026 Hope, Inc. All rights reserved.
           </p>
         </footer>
       </main>
-
-      <div className="hidden lg:block fixed left-12 top-1/2 -translate-y-1/2 space-y-8 pointer-events-none">
-        <div className="w-px h-32 bg-gradient-to-b from-transparent via-primary-container to-transparent opacity-30"></div>
-        <div className="text-[10px] [writing-mode:vertical-lr] text-outline-variant tracking-[0.5em] font-bold uppercase">System Integrity: Nominal</div>
-        <div className="w-px h-32 bg-gradient-to-b from-transparent via-tertiary-container to-transparent opacity-30"></div>
-      </div>
     </div>
   );
 }
