@@ -17,7 +17,7 @@ import JobHistory from './pages/JobHistory';
 import JobListPage from './pages/JobListPage';
 import DeptListPage from './pages/DeptListPage';
 import Admin from './pages/Admin';
-import DeletedItems from './pages/DeletedItems';
+import DeletedItemsPage from './pages/DeletedItemsPage';
 
 export default function App() {
   return (
