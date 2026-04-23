@@ -1,12 +1,22 @@
 import { useRights } from '../context/UserRightsContext';
+import { useAuth } from '../context/AuthContext'; // Added for identity check
 
 export default function JobHistory() {
   const { can } = useRights();
+  const { user } = useAuth(); // Get the current logged-in user
 
   const mockHistory = [
-    { id: 1, name: "Alex Rivera", event: "Promotion", date: "2026-01-15", stamp: "JH_LOG_8821" },
-    { id: 2, name: "Sam Chen", event: "Department Transfer", date: "2026-03-10", stamp: "JH_LOG_9012" },
+    { id: 1, name: "Alex Rivera", event: "Promotion", date: "2026-01-15", stamp: "JH_LOG_8821", userId: "ALEX_ID_123" },
+    { id: 2, name: "Sam Chen", event: "Department Transfer", date: "2026-03-10", stamp: "JH_LOG_9012", userId: "SAM_ID_456" },
+    // Adding a record for 'you' to test the filter
+    { id: 3, name: "Current User", event: "System Access", date: "2026-04-23", stamp: "JH_LOG_9999", userId: user?.id },
   ];
+
+  // PRIVACY FILTER: If user is Admin (JH_VIEW_ALL), show everything.
+  // Otherwise, only show records where userId matches the logged-in user's ID.
+  const filteredHistory = can('JH_VIEW_ALL') 
+    ? mockHistory 
+    : mockHistory.filter(item => item.userId === user?.id);
 
   return (
     <div className="p-8 space-y-6">
@@ -35,7 +45,7 @@ export default function JobHistory() {
             </tr>
           </thead>
           <tbody className="text-sm">
-            {mockHistory.map(item => (
+            {filteredHistory.map(item => (
               <tr key={item.id} className="border-t border-white/5 hover:bg-white/[0.02]">
                 <td className="px-6 py-4 font-bold text-white">{item.name}</td>
                 <td className="px-6 py-4 text-zinc-400">{item.event}</td>
@@ -53,6 +63,9 @@ export default function JobHistory() {
             ))}
           </tbody>
         </table>
+        {filteredHistory.length === 0 && (
+          <div className="p-12 text-center text-zinc-600 italic text-sm">No personal history records found.</div>
+        )}
       </div>
     </div>
   );
