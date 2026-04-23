@@ -38,8 +38,12 @@ export default function App() {
           <Route path="/jobhistory" element={<JobHistory />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/departments" element={<Departments />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/deleted-items" element={<DeletedItems />} />
+          
+          {/* Admin-only Routes - require ADMIN or SUPERADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']} />}>
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/deleted-items" element={<DeletedItems />} />
+          </Route>
         </Route>
       </Route>
 
