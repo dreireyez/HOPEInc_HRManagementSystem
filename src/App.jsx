@@ -11,7 +11,7 @@ import AuthCallback from './pages/AuthCallback';
 
 // Private Pages
 import Dashboard from './pages/Dashboard';
-import Employees from './pages/Employees';
+import EmployeeListPage from './pages/EmployeeListPage';
 import JobHistory from './pages/JobHistory';
 import Jobs from './pages/Jobs';
 import Departments from './pages/Departments';
@@ -34,7 +34,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           
           {/* HR Modules - Placeholders are already in your project */}
-          <Route path="/employees" element={<Employees />} />
+          <Route path="/employees" element={<EmployeeListPage userRole="ADMIN" />} />
           <Route path="/jobhistory" element={<JobHistory />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/departments" element={<Departments />} />
