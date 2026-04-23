@@ -27,13 +27,11 @@ export default function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* --- PRIVATE ROUTES --- */}
-      {/* Wrapped in ProtectedRoute for security and Layout for the Sidebar/Navbar */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
-          {/* This is the new Bento-style Systems Overview */}
+          {/* Main Redirect from root to Dashboard */}
           <Route path="/" element={<Dashboard />} />
           
-          {/* HR Modules - Placeholders are already in your project */}
           <Route path="/employees" element={<Employees />} />
           <Route path="/jobhistory" element={<JobHistory />} />
           <Route path="/jobs" element={<Jobs />} />

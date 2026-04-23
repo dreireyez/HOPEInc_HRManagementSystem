@@ -1,15 +1,34 @@
-import { Outlet, NavLink } from 'react-router-dom';
-
-const navItems = [
-  { name: 'Dashboard', path: '/', icon: 'grid_view' },
-  { name: 'Employees', path: '/employees', icon: 'badge' },
-  { name: 'History', path: '/jobhistory', icon: 'history' },
-  { name: 'Jobs', path: '/jobs', icon: 'work' },
-  { name: 'Units', path: '/departments', icon: 'domain' },
-  { name: 'Admin', path: '/admin', icon: 'admin_panel_settings', disabled: true },
-];
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
+import { useRights } from '../context/UserRightsContext';
 
 export default function Layout() {
+  const navigate = useNavigate();
+  const { can } = useRights();
+
+  // Navigation logic moved inside the component to use the 'can' function
+  const navItems = [
+    { name: 'Dashboard', path: '/', icon: 'grid_view', show: true },
+    { name: 'Employees', path: '/employees', icon: 'badge', show: true },
+    { name: 'History', path: '/jobhistory', icon: 'history', show: true },
+    { name: 'Jobs', path: '/jobs', icon: 'work', show: true },
+    { name: 'Units', path: '/departments', icon: 'domain', show: true },
+    // GATING: Only show Admin if user has ADMIN_VIEW permission
+    { name: 'Admin', path: '/admin', icon: 'admin_panel_settings', show: can('ADMIN_VIEW') },
+  ];
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear session and bounce to login
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout failed:", error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0B0F] text-[#e2e2e2] relative overflow-x-hidden font-body">
       
@@ -27,11 +46,14 @@ export default function Layout() {
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="bg-white/5 border border-white/10 text-white px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:bg-white/10 transition-all">
+          <button 
+            onClick={handleLogout}
+            className="bg-white/5 border border-white/10 text-white px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:bg-white/10 transition-all active:scale-95"
+          >
             Logout
           </button>
           <div className="h-10 w-10 rounded-full border-2 border-[#2E5BFF] overflow-hidden hidden sm:block">
-             <img alt="User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfY4Grs8AjDvtyQfOGKsO3_KS5WbalsK-a0d9bRKVcoBe_aAETtD3zoL3KfEba4YgSswWi1ig71UBkMh1GnDaBece1WYr8a2YdPBwU4nNtPzwDBnETDdF76wEwN5ZzLptvuqp4ECh6W8n6FysOZQy3u5SpnE_aeFDKhPCeyaCnbAorZylWx9Bm8cN-KGrYqcBXXXQpHkUparUV6WBu_GCVoggo0cp75xtQ6g5u1ZNUrg6HTA_9od32qNP--2B8bSaDgGBPMI8E5lwY" className="w-full h-full object-cover"/>
+             <img alt="User" src="https://ui-avatars.com/api/?name=User&background=2E5BFF&color=fff" className="w-full h-full object-cover"/>
           </div>
         </div>
       </nav>
@@ -43,18 +65,16 @@ export default function Layout() {
           <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">HR Administration</p>
         </div>
         <nav className="flex flex-col gap-1 flex-grow">
-          {navItems.map((item) => (
+          {navItems.filter(item => item.show).map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) => `
                 flex items-center gap-4 px-6 py-3.5 rounded-full transition-all duration-200
-                ${isActive && !item.disabled 
+                ${isActive 
                   ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20' 
                   : 'text-zinc-500 hover:text-white hover:bg-white/5'}
-                ${item.disabled ? 'opacity-20 cursor-not-allowed' : ''}
               `}
-              onClick={(e) => item.disabled && e.preventDefault()}
             >
               <span className="material-symbols-outlined">{item.icon}</span>
               <span className="text-sm font-bold">{item.name}</span>
@@ -63,9 +83,9 @@ export default function Layout() {
         </nav>
       </aside>
 
-      {/* FIXED BOTTOM NAV: Solid color, no transparency bugs */}
+      {/* FIXED BOTTOM NAV: Mobile */}
       <nav className="fixed bottom-0 left-0 w-full h-20 lg:hidden bg-[#16161E] border-t border-white/10 flex justify-around items-center z-[100]">
-        {navItems.filter(i => !i.disabled).map((item) => (
+        {navItems.filter(item => item.show).map((item) => (
           <NavLink 
             key={item.name} 
             to={item.path} 
