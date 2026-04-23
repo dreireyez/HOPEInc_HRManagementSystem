@@ -35,13 +35,16 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           
           {/* HR Modules - Placeholders are already in your project */}
+          <Route path="/jobs" element={<JobListPage userRole="ADMIN" />} />
+          <Route path="/departments" element={<DeptListPage userRole="ADMIN" />} />
           <Route path="/employees" element={<EmployeeListPage userRole="ADMIN" />} />
           <Route path="/employees/:id" element={<EmployeeDetailPage userRole="ADMIN" />} />
           <Route path="/jobhistory" element={<JobHistory />} />
-          <Route path="/jobs" element={<JobListPage userRole="ADMIN" />} />
-          <Route path="/departments" element={<DeptListPage userRole="ADMIN" />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/deleted-items" element={<DeletedItemsPage userRole="ADMIN" />} />
+          {/* Admin-only Routes - require ADMIN or SUPERADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']} />}>
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/deleted-items" element={<DeletedItems />} />
+          </Route>
         </Route>
       </Route>
 
