@@ -20,6 +20,11 @@ import Admin from './pages/Admin';
 import DeletedItemsPage from './pages/DeletedItemsPage';
 
 export default function App() {
+  // To test PR-05 Sidebar Gating:
+  // 1. Set to "ADMIN" to see all 7 sidebar links.
+  // 2. Set to "USER" to hide "Admin" and "Deleted" links.
+  const currentUserRole = "USER";
+
   return (
     <Routes>
       {/* --- PUBLIC ROUTES --- */}
@@ -28,9 +33,9 @@ export default function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* --- PRIVATE ROUTES --- */}
-      {/* Wrapped in ProtectedRoute for security and Layout for the Sidebar/Navbar */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
+      {/* We pass userRole here so the Sidebar/Layout can gate the links (PR-05) */}
+        <Route element={<Layout userRole={currentUserRole}/>}>
           {/* This is the new Bento-style Systems Overview */}
           <Route path="/" element={<Dashboard />} />
           
@@ -39,6 +44,7 @@ export default function App() {
           <Route path="/departments" element={<DeptListPage userRole="ADMIN" />} />
           <Route path="/employees" element={<EmployeeListPage userRole="ADMIN" />} />
           <Route path="/employees/:id" element={<EmployeeDetailPage userRole="ADMIN" />} />
+
           <Route path="/jobhistory" element={<JobHistory />} />
           {/* Admin-only Routes - require ADMIN or SUPERADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']} />}>
