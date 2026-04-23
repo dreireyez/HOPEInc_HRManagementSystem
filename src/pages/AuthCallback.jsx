@@ -1,23 +1,60 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from "../lib/supabaseClient";// Ensure this path is correct
 
 export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulated handshake delay (2 seconds)
-    // In Sprint 2, this is where supabase.auth.onAuthStateChange logic lives
-    const timer = setTimeout(() => {
-      navigate('/');
-    }, 2000);
+    const handleAuthCallback = async () => {
+      try {
+        // 1. Capture the session from the URL hash/query
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
 
-    return () => clearTimeout(timer);
+        if (data?.session) {
+          const userId = data.session.user.id;
+
+          // 2. Security Check: Verify user exists and is ACTIVE in your DB
+          const { data: userData, error: dbError } = await supabase
+            .from('user')
+            .select('record_status')
+            .eq('userid', userId)
+            .single();
+
+          if (dbError || !userData) {
+            // If they are in Auth but not the 'user' table yet, it's a new registration
+            // Let them pass so the SQL trigger can finish, or redirect to register
+            navigate('/employees');
+            return;
+          }
+
+          if (userData.record_status === 'ACTIVE') {
+            // SUCCESS: Redirect to main dashboard
+            navigate('/employees');
+          } else {
+            // BLOCKED: User is INACTIVE
+            await supabase.auth.signOut();
+            navigate('/login?error=inactive');
+          }
+        } else {
+          // No session found, send back to login
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('Error during auth callback:', err.message);
+        navigate('/login?error=auth_fail');
+      }
+    };
+
+    handleAuthCallback();
   }, [navigate]);
 
   return (
     <div className="min-h-screen bg-[#0B0B0F] flex flex-col items-center justify-center relative overflow-hidden font-body">
       
-      {/* Background Atmosphere (Synced with App Shell) */}
+      {/* Background Atmosphere */}
       <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#2E5BFF]/10 blur-[120px] rounded-full z-0 pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[#B71BCF]/5 blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
@@ -25,10 +62,8 @@ export default function AuthCallback() {
         
         {/* Custom Liquid Spinner */}
         <div className="relative w-24 h-24 mb-10">
-          {/* Outer Rotating Glow */}
           <div className="absolute inset-0 rounded-full border-4 border-t-[#2E5BFF] border-r-[#8A3DFF] border-b-[#B71BCF] border-l-transparent animate-spin"></div>
           
-          {/* Inner Pulsing Core */}
           <div className="absolute inset-4 rounded-2xl bg-gradient-to-br from-[#2E5BFF] to-[#B71BCF] animate-pulse flex items-center justify-center shadow-[0_0_30px_rgba(138,61,255,0.5)]">
             <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
               fluid
@@ -52,7 +87,7 @@ export default function AuthCallback() {
         </div>
       </div>
 
-      {/* Decorative Loading Bar at the very bottom */}
+      {/* Decorative Loading Bar */}
       <div className="fixed bottom-0 left-0 w-full h-1 bg-zinc-900">
         <div className="h-full bg-gradient-to-r from-[#2E5BFF] via-[#8A3DFF] to-[#B71BCF] animate-progress-loading"></div>
       </div>
