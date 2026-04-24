@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Trigger the guard on every sign-in or session update
       handleAuthStateChange(event, session);
     });
 

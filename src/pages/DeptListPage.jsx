@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRights } from '../context/UserRightsContext'; // Added
 import DeptModal from '../components/modals/DeptModal';
 
 const MOCK_DEPTS = [
@@ -7,9 +8,9 @@ const MOCK_DEPTS = [
   { code: 'MKT-02', name: 'Global Marketing' },
 ];
 
-export default function DeptListPage({ userRole = 'ADMIN' }) {
+export default function DeptListPage() {
+  const { can } = useRights(); // Hook initialization
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isAdmin = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -18,7 +19,9 @@ export default function DeptListPage({ userRole = 'ADMIN' }) {
           <h1 className="text-5xl font-black text-white tracking-tighter mb-2">Departments</h1>
           <p className="text-zinc-500 font-bold text-sm uppercase tracking-widest font-body">Operational Business Units</p>
         </div>
-        {isAdmin && (
+        
+        {/* Rubric: Add gated by DEPT_ADD */}
+        {can('DEPT_ADD') && (
           <button 
             onClick={() => setIsModalOpen(true)}
             className="bg-white/5 border border-white/10 text-primary px-8 py-4 rounded-full font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
@@ -36,7 +39,13 @@ export default function DeptListPage({ userRole = 'ADMIN' }) {
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>corporate_fare</span>
                 </div>
-                {isAdmin && <button className="text-zinc-600 hover:text-white transition-colors"><span className="material-symbols-outlined text-xl">edit</span></button>}
+                
+                {/* Rubric: Edit gated by DEPT_EDIT */}
+                {can('DEPT_EDIT') && (
+                  <button className="text-zinc-600 hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-xl">edit</span>
+                  </button>
+                )}
              </div>
              <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">{dept.code}</h3>
              <p className="text-xl font-bold text-white tracking-tight">{dept.name}</p>

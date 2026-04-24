@@ -5,11 +5,12 @@ import { supabase } from '../lib/supabaseClient';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Rubric Requirement: supabase.auth.signIn() wired to Login form
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);

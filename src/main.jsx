@@ -7,6 +7,10 @@ import { UserRightsProvider } from './context/UserRightsContext';
 import './index.css';
 import App from './App.jsx';
 
+// Import the Context Providers
+import { AuthProvider } from './context/AuthContext';
+import { UserRightsProvider } from './context/UserRightsContext';
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
