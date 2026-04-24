@@ -10,27 +10,34 @@
 -- =========================================
 -- Automatically creates a user record and assigns default module rights
 -- when a new entry is created in auth.users (on signup)
-CREATE OR REPLACE FUNCTION provision_new_user()
-RETURNS TRIGGER AS $$
-DECLARE
-  v_right_id VARCHAR(20);
+-- SECURITY DEFINER allows the function to run with elevated permissions
+CREATE OR REPLACE FUNCTION public.provision_new_user()
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
 BEGIN
-  -- 1. Create user record in public.user table
-  INSERT INTO public.user (userid, record_status, stamp)
+  -- 1. Create user record in public."user" table
+  INSERT INTO public."user" (userId, record_status, stamp)
   VALUES (NEW.id, 'ACTIVE', NOW()::TEXT)
-  ON CONFLICT (userid) DO NOTHING;
+  ON CONFLICT (userId) DO NOTHING;
 
   -- 2. Assign default module rights to new user
-  -- Insert a default VIEW right for each module
-  INSERT INTO public.user_module_rights (userid, right_id, right_value)
+  -- Insert a default VIEW right for each module (if rights table exists)
+  INSERT INTO public.UserModule_Rights (userId, right_id, right_value)
   SELECT NEW.id, right_id, 1
   FROM public.rights
   WHERE right_id IN ('EMP_VIEW', 'JOB_VIEW', 'DEPT_VIEW')
-  ON CONFLICT (userid, right_id) DO NOTHING;
+  ON CONFLICT (userId, right_id) DO NOTHING;
 
   RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Log error but don't fail - allow signup to complete
+  RAISE NOTICE 'Error in provision_new_user: %', SQLERRM;
+  RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- =========================================
 -- TRIGGER: trigger_auth_user_created

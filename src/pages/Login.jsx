@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import supabase from '../lib/supabaseClient';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -47,6 +47,10 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setIsError(false);
+    setErrorMessage('');
+    
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -57,6 +61,9 @@ export default function LoginPage() {
       if (error) throw error;
     } catch (err) {
       console.error("Google Auth Error:", err.message);
+      setErrorMessage(err.message || "Failed to sign in with Google. Please try again.");
+      setIsError(true);
+      setLoading(false);
     }
   };
 

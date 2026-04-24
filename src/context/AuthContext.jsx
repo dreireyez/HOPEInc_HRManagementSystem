@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import supabase from '../lib/supabaseClient';
 
 const AuthContext = createContext({});
 
@@ -11,28 +11,46 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     const handleAuthStateChange = async (event, session) => {
-      // Only trigger the "Synchronizing" overlay for major identity changes
       if (event === 'INITIAL' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         setLoading(true);
       }
 
       if (session?.user) {
         try {
-          const { data } = await supabase
+          const userId = session.user.id;
+
+          // 1. Try to fetch user
+          let { data, error } = await supabase
             .from('user')
             .select('record_status')
-            .eq('userid', session.user.id)
+            .eq('userid', userId)
             .single();
 
+          // 2. If NOT FOUND → provision securely
+          if (error || !data) {
+            await supabase.rpc('provision_new_user');
+
+            // Re-fetch after provisioning
+            const res = await supabase
+              .from('user')
+              .select('record_status')
+              .eq('userid', userId)
+              .single();
+
+            data = res.data;
+          }
+
           if (mounted) {
-            if (data?.record_status === 'INACTIVE') {
+            // 3. Login guard
+            if (data?.record_status !== 'ACTIVE') {
               await supabase.auth.signOut();
               setUser(null);
-              alert("Access Denied: Your account is currently INACTIVE.");
+              alert("Your account is pending activation by an administrator.");
             } else {
               setUser(session.user);
             }
           }
+
         } catch (err) {
           console.error("Auth Guard Error:", err);
           if (mounted) setUser(null);
@@ -40,7 +58,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         if (mounted) setUser(null);
       }
-      
+
       if (mounted) setLoading(false);
     };
 
@@ -49,11 +67,12 @@ export const AuthProvider = ({ children }) => {
       handleAuthStateChange('INITIAL', session);
     });
 
-    // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Trigger the guard on every sign-in or session update
-      handleAuthStateChange(event, session);
-    });
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        handleAuthStateChange(event, session);
+      }
+    );
 
     return () => {
       mounted = false;

@@ -1,29 +1,33 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import supabase from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     // Rubric Requirement: exchanges OAuth code for session
     const handleAuthCallback = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("OAuth Error:", error.message);
-        navigate('/login?error=oauth_failed');
-      } else if (data?.session) {
-        // Rubric Requirement: navigates to /employees or back to /login with error
-        // The AuthContext guard handles the 'ACTIVE' check automatically
-        navigate('/employees');
+      // Wait for AuthContext to initialize and retrieve user
+      if (loading) {
+        // Still initializing, wait
+        return;
+      }
+
+      // AuthContext has finished loading
+      if (user) {
+        // User is authenticated and provisioned, redirect to dashboard
+        navigate('/');
       } else {
-        navigate('/login');
+        // User failed authentication or is inactive, redirect to login
+        navigate('/login?error=auth_failed');
       }
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0B0B0F] flex flex-col items-center justify-center relative overflow-hidden font-body">

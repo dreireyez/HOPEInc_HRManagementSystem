@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useRights } from '../context/UserRightsContext';
-import { supabase } from '../lib/supabaseClient';
+import supabase from '../lib/supabaseClient';
 
 export default function Layout() {
   const { can } = useRights();
