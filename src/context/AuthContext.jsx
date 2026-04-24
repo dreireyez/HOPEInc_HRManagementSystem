@@ -8,61 +8,68 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Rubric Requirement: Provides currentUser and session state via onAuthStateChange
+    let mounted = true;
+
     const handleAuthStateChange = async (event, session) => {
-      const sessionUser = session?.user ?? null;
+      // Only trigger the "Synchronizing" overlay for major identity changes
+      if (event === 'INITIAL' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setLoading(true);
+      }
 
-      if (sessionUser) {
-        setLoading(true); // Keep loading true while we check DB status
-        
-        // Rubric Requirement: Login guard checks record_status = 'ACTIVE' after every SIGNED_IN event
-        const { data, error } = await supabase
-          .from('user') 
-          .select('record_status')
-          .eq('userid', sessionUser.id)
-          .single();
+      if (session?.user) {
+        try {
+          const { data } = await supabase
+            .from('user')
+            .select('record_status')
+            .eq('userid', session.user.id)
+            .single();
 
-        // Check if the user is explicitly INACTIVE
-        if (data?.record_status === 'INACTIVE') {
-          // Rubric Requirement: Signs out and shows error if INACTIVE
-          console.warn("Unauthorized access attempt: User is INACTIVE");
-          await supabase.auth.signOut();
-          setUser(null);
-          alert("Access Denied: Your account is currently INACTIVE. Please contact HR.");
-        } else if (error && error.code !== 'PGRST116') {
-          // Handle genuine database errors
-          console.error("Auth Guard Error:", error.message);
-          setUser(null);
-        } else {
-          // User is ACTIVE (or record doesn't exist yet, which usually implies provisioning is pending)
-          setUser(sessionUser);
+          if (mounted) {
+            if (data?.record_status === 'INACTIVE') {
+              await supabase.auth.signOut();
+              setUser(null);
+              alert("Access Denied: Your account is currently INACTIVE.");
+            } else {
+              setUser(session.user);
+            }
+          }
+        } catch (err) {
+          console.error("Auth Guard Error:", err);
+          if (mounted) setUser(null);
         }
       } else {
-        setUser(null);
+        if (mounted) setUser(null);
       }
       
-      setLoading(false);
+      if (mounted) setLoading(false);
     };
 
-    // Initial session fetch
+    // Initialize session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      handleAuthStateChange('INITIAL_SESSION', session);
+      handleAuthStateChange('INITIAL', session);
     });
 
-    // Rubric Requirement: session listener via onAuthStateChange
+    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Trigger the guard on every sign-in or session update
       handleAuthStateChange(event, session);
     });
 
     return () => {
-      if (subscription) subscription.unsubscribe();
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {!loading && children}
+      {!loading ? children : (
+        <div className="min-h-screen bg-[#0B0B0F] flex items-center justify-center">
+          <div className="text-white font-black animate-pulse tracking-widest text-xs uppercase">
+            Synchronizing...
+          </div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };

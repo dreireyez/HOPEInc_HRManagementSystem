@@ -1,28 +1,34 @@
-// src/components/ProtectedRoute.jsx
 import { Navigate, Outlet } from 'react-router-dom';
-import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext'; // Created in Sprint 1
-import { UserRightsContext } from '../context/UserRightsContext'; // Created in Sprint 2
+import { useAuth } from '../context/AuthContext'; 
+import { useRights } from '../context/UserRightsContext';
 
-const ProtectedRoute = ({ allowedRoles }) => {
-  const { session, loading: authLoading } = useContext(AuthContext);
-  const { currentUser, loading: rightsLoading } = useContext(UserRightsContext);
+const ProtectedRoute = ({ requiredRight }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { can, loading: rightsLoading } = useRights();
 
-  // Wait for both authentication and rights to load
-  if (authLoading || rightsLoading) return <div>Loading...</div>;
-
-  // 1. Basic Login Guard: Kick to login if no session exists
-  if (!session) return <Navigate to="/login" replace />;
-
-  // 2. Role Guard: If specific roles are required, check against currentUser
-  if (allowedRoles && currentUser) {
-    const isAuthorized = allowedRoles.includes(currentUser.user_type);
-    
-    // Kick unauthorized users back to a safe default page
-    if (!isAuthorized) return <Navigate to="/employees" replace />;
+  // Show a loading screen while we determine identity and rights
+  if (authLoading || rightsLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#0B0B0F]">
+        <div className="text-white font-black animate-pulse tracking-[0.3em] text-[10px] uppercase">
+          Verifying Security Clearance...
+        </div>
+      </div>
+    );
   }
 
-  // Pass all checks
+  // 1. If not logged in, redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // 2. If a specific right is required but the user doesn't have it
+  if (requiredRight && !can(requiredRight)) {
+    console.warn(`Access Denied: Missing right [${requiredRight}]`);
+    return <Navigate to="/" replace />; 
+  }
+
+  // Permission granted
   return <Outlet />;
 };
 
