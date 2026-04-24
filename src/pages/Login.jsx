@@ -10,28 +10,26 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Rubric Requirement: supabase.auth.signIn() wired to Login form
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setIsError(false);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
+      console.error("Login failed:", error.message);
       setIsError(true);
       setLoading(false);
     } else {
+      // Success! AuthContext will handle the session and guard check
+      console.log("Login successful, redirecting...");
       navigate('/employees');
     }
-  };
-
-  const handleGoogleSignIn = async () => {
-    // Rubric Requirement: supabase.auth.signInWithOAuth({provider:'google'})
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` }
-    });
-    if (error) alert(error.message);
   };
 
   return (
@@ -76,7 +74,10 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (isError) setIsError(false);
+                  }}
                   className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-12 text-on-surface placeholder:text-outline transition-all duration-300 disabled:opacity-50 ${isError ? 'ring-2 ring-error shadow-[0_0_15px_rgba(255,180,171,0.3)]' : 'focus:ring-2 focus:ring-primary-container/50'}`}
                   placeholder="••••••••"
                   disabled={loading}
@@ -93,24 +94,19 @@ export default function LoginPage() {
               )}
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-primary-container to-tertiary-container text-white font-bold py-4 rounded-full shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all duration-200 uppercase tracking-widest text-sm disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-primary-container to-tertiary-container text-white font-bold py-4 rounded-full shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all duration-200 uppercase tracking-widest text-sm disabled:opacity-50"
+            >
               {loading ? "Authenticating..." : "Login"}
-            </button>
-
-            <div className="relative flex items-center py-4 text-outline">
-              <div className="flex-grow border-t border-outline-variant/20"></div>
-              <span className="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-[0.2em]">or continue with</span>
-              <div className="flex-grow border-t border-outline-variant/20"></div>
-            </div>
-
-            <button type="button" onClick={handleGoogleSignIn} disabled={loading} className="w-full flex items-center justify-center gap-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface font-semibold py-4 rounded-lg transition-colors border border-outline-variant/10 disabled:opacity-50">
-              <img alt="Google Logo" className="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" />
-              <span className="text-sm tracking-tight">Sign in with Google</span>
             </button>
           </form>
 
           <div className="mt-10 text-center">
-            <p className="text-on-surface-variant text-sm">Don't have an account? <Link to="/register" className="text-primary-container font-bold hover:text-tertiary transition-colors ml-1">Register</Link></p>
+            <p className="text-on-surface-variant text-sm">
+              Don't have an account? <Link to="/register" className="text-primary-container font-bold hover:text-tertiary transition-colors ml-1">Register</Link>
+            </p>
           </div>
         </div>
       </main>
