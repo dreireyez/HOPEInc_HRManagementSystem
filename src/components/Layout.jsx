@@ -28,19 +28,18 @@ export default function Layout() {
   const visibleNavItems = navItems.filter(item => !item.right || can(item.right));
 
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-[#e2e2e2] relative overflow-x-hidden font-body">
-      
+    <div className="min-h-screen bg-[#0B0B0F] text-[#e2e2e2] relative font-body">
       {/* Background Orbs */}
       <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#2E5BFF]/10 blur-[120px] rounded-full z-0 pointer-events-none"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[#B71BCF]/5 blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
       {/* Top Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#16161E]/90 backdrop-blur-xl border-b border-white/5 flex justify-between items-center px-6 md:px-12 h-20">
+      <nav className="fixed top-0 w-full z-50 bg-[#16161E]/90 backdrop-blur-xl border-b border-white/5 flex justify-between items-center px-12 h-20">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2E5BFF] via-[#8A3DFF] to-[#B71BCF] flex items-center justify-center shadow-lg shadow-[#2E5BFF]/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2E5BFF] to-[#B71BCF] flex items-center justify-center shadow-lg">
             <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>fluid</span>
           </div>
-          <span className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent tracking-tighter">HopeHRS</span>
+          <span className="text-2xl font-black bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent tracking-tighter">HopeHRS</span>
         </div>
         
         <div className="flex items-center gap-4">
@@ -75,7 +74,7 @@ export default function Layout() {
               `}
             >
               <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="text-sm font-bold">{item.name}</span>
+              <span className="text-sm font-black">{item.name}</span>
             </NavLink>
           ))}
         </nav>
