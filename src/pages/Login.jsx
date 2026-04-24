@@ -1,176 +1,135 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom'; // Assuming you are using react-router v6
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isError, setIsError] = useState(false); // Toggle this to see the validation state
+  const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Supabase login logic goes here later
-    console.log("Logging in with:", email, password);
+    setLoading(true);
+    setIsError(false);
+    setErrorMessage('');
+
+    try {
+      // 1. Attempt Sign In
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(), // Specialist Tip: Always trim emails
+        password: password,
+      });
+
+      // 2. Handle Supabase Errors
+      if (error) {
+        setErrorMessage(error.message);
+        setIsError(true);
+        return;
+      }
+
+      // 3. Success: Redirect to Dashboard
+      if (data?.user) {
+        console.log("Login successful for:", data.user.email);
+        navigate('/'); 
+      }
+    } catch (err) {
+      console.error("Unexpected Error:", err);
+      setErrorMessage("A system error occurred. Please try again.");
+      setIsError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    // Supabase OAuth logic goes here later
-    console.log("Initiating Google OAuth");
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { 
+          redirectTo: window.location.origin + '/auth/callback' 
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Google Auth Error:", err.message);
+    }
   };
 
   return (
-    <div className="bg-background text-on-background font-body min-h-screen flex items-center justify-center overflow-hidden neon-flux-bg">
-      
-      {/* Decorative Background Orbs */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-primary-container/20 blur-[120px] rounded-full z-0 pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-tertiary-container/10 blur-[150px] rounded-full z-0 pointer-events-none"></div>
+    <div className="min-h-screen bg-[#0B0B0F] flex items-center justify-center p-6 relative overflow-hidden font-sans">
+      {/* Dynamic Background Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
-      <main className="relative z-10 w-full max-w-xl px-6 py-12">
-        {/* Glassmorphic Login Card */}
-        <div className="bg-[#1E1E2E]/60 backdrop-blur-3xl rounded-xl p-8 md:p-12 shadow-2xl ring-1 ring-on-surface/5">
-          
-          {/* Brand Identity */}
-          <div className="flex flex-col items-center mb-10">
-            <div className="mb-4 flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-container to-tertiary-container shadow-lg">
-              <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                fluid
-              </span>
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent">
-              HopeHRS
-            </h1>
-            <p className="text-on-surface-variant text-sm mt-2 font-medium tracking-wide">ENTER THE FLUX</p>
-          </div>
-
-          {/* Login Form */}
-          <form className="space-y-6" onSubmit={handleLogin}>
-            
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">
-                Email Address
-              </label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-xl group-focus-within:text-primary transition-colors">
-                  alternate_email
-                </span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary-container/50 transition-all duration-300"
-                  placeholder="name@company.com"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password Field with Error State */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                  Password
-                </label>
-                <Link to="/forgot-password" className="text-[10px] font-bold text-primary-container hover:text-tertiary transition-colors uppercase tracking-wider">
-                  Forgot?
-                </Link>
-              </div>
-              <div className="relative group">
-                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${isError ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>
-                  lock
-                </span>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (isError) setIsError(false); // Clear error on typing
-                  }}
-                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-12 text-on-surface placeholder:text-outline transition-all duration-300 ${
-                    isError 
-                      ? 'ring-2 ring-error shadow-[0_0_15px_rgba(255,180,171,0.3)] focus:ring-error' 
-                      : 'focus:ring-2 focus:ring-primary-container/50'
-                  }`}
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline hover:text-on-surface transition-colors"
-                >
-                  {showPassword ? "visibility" : "visibility_off"}
-                </button>
-              </div>
-              
-              {/* Conditional Error Message */}
-              {isError && (
-                <p className="text-[11px] text-error font-medium flex items-center gap-1 mt-1 ml-1">
-                  <span className="material-symbols-outlined text-xs">info</span>
-                  Invalid credentials. Please try again.
-                </p>
-              )}
-            </div>
-
-            {/* Primary Login Button */}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary-container to-tertiary-container text-white font-bold py-4 rounded-full shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all duration-200 uppercase tracking-widest text-sm"
-            >
-              Login
-            </button>
-
-            {/* Divider */}
-            <div className="relative flex items-center py-4">
-              <div className="flex-grow border-t border-outline-variant/20"></div>
-              <span className="flex-shrink mx-4 text-[10px] font-bold text-outline uppercase tracking-[0.2em]">or continue with</span>
-              <div className="flex-grow border-t border-outline-variant/20"></div>
-            </div>
-
-            {/* Social Login */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 bg-surface-variant/50 hover:bg-surface-variant text-on-surface font-semibold py-4 rounded-lg transition-colors border border-outline-variant/10"
-            >
-              <img
-                alt="Google Logo"
-                className="w-5 h-5"
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              />
-              <span className="text-sm tracking-tight">Sign in with Google</span>
-            </button>
-          </form>
-
-          {/* Registration Link */}
-          <div className="mt-10 text-center">
-            <p className="text-on-surface-variant text-sm">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary-container font-bold hover:text-tertiary transition-colors ml-1">
-                Register
-              </Link>
-            </p>
-          </div>
+      <div className="relative z-10 w-full max-w-[440px] bg-[#16161E]/80 backdrop-blur-xl border border-white/5 p-10 rounded-[2.5rem] shadow-2xl">
+        <div className="text-center mb-10">
+           <h1 className="text-4xl font-black bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent mb-2 tracking-tighter">
+            HopeHRS
+          </h1>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em]">Secure Access Portal</p>
         </div>
 
-        {/* Footer Credits */}
-        <footer className="mt-12 text-center">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-outline">
-            © 2026 Hope, Inc. All rights reserved.
-          </p>
-          <div className="flex justify-center gap-6 mt-4">
-            <Link to="/privacy" className="text-[10px] text-outline hover:text-on-surface transition-colors uppercase tracking-widest">Privacy</Link>
-            <Link to="/terms" className="text-[10px] text-outline hover:text-on-surface transition-colors uppercase tracking-widest">Terms</Link>
-            <Link to="/support" className="text-[10px] text-outline hover:text-on-surface transition-colors uppercase tracking-widest">Support</Link>
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/40 transition-all placeholder:text-zinc-700 font-medium"
+              placeholder="name@hopeinc.edu"
+              required
+            />
           </div>
-        </footer>
-      </main>
 
-      {/* Side Decoration: Data Stream */}
-      <div className="hidden lg:block fixed left-12 top-1/2 -translate-y-1/2 space-y-8 pointer-events-none">
-        <div className="w-px h-32 bg-gradient-to-b from-transparent via-primary-container to-transparent opacity-30"></div>
-        <div className="text-[10px] [writing-mode:vertical-lr] text-outline-variant tracking-[0.5em] font-bold uppercase">System Integrity: Nominal</div>
-        <div className="w-px h-32 bg-gradient-to-b from-transparent via-tertiary-container to-transparent opacity-30"></div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setIsError(false); }}
+              className={`w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-5 text-white outline-none transition-all placeholder:text-zinc-700 font-medium ${isError ? 'ring-2 ring-red-500/50' : 'focus:ring-2 focus:ring-blue-500/40'}`}
+              placeholder="••••••••"
+              required
+            />
+            {isError && (
+              <p className="text-[11px] text-red-400 font-bold ml-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">warning</span>
+                {errorMessage || "Invalid credentials"}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black py-4 rounded-full shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all uppercase text-[11px] tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Verifying...' : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="relative flex items-center py-8">
+          <div className="flex-grow border-t border-white/5"></div>
+          <span className="flex-shrink mx-4 text-[9px] font-black text-zinc-600 uppercase tracking-widest">or</span>
+          <div className="flex-grow border-t border-white/5"></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all border border-white/5 group"
+        >
+          <img alt="Google" className="w-4 h-4 group-hover:scale-110 transition-transform" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" />
+          <span className="text-[10px] uppercase tracking-widest">Continue with Google</span>
+        </button>
+        
+        <p className="text-center mt-10 text-zinc-600 text-xs font-bold uppercase tracking-tighter">
+          Need an account? <Link to="/register" className="text-blue-500 hover:text-blue-400 ml-1 underline decoration-blue-500/30 underline-offset-4">Register Now</Link>
+        </p>
       </div>
     </div>
   );

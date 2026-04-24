@@ -1,25 +1,34 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { UserRightsContext } from '../context/UserRightsContext';
+import { useAuth } from '../context/AuthContext'; 
+import { useRights } from '../context/UserRightsContext';
 
 const ProtectedRoute = ({ requiredRight }) => {
-  const { user, loading: authLoading } = useContext(AuthContext);
-  const { can, loading: rightsLoading } = useContext(UserRightsContext);
+  const { user, loading: authLoading } = useAuth();
+  const { can, loading: rightsLoading } = useRights();
 
+  // Show a loading screen while we determine identity and rights
   if (authLoading || rightsLoading) {
-    return <div className="p-8 text-white font-black animate-pulse">VERIFYING PERMISSIONS...</div>;
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#0B0B0F]">
+        <div className="text-white font-black animate-pulse tracking-[0.3em] text-[10px] uppercase">
+          Verifying Security Clearance...
+        </div>
+      </div>
+    );
   }
 
-  // 1. Auth Guard
-  if (!user) return <Navigate to="/login" replace />;
+  // 1. If not logged in, redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  // 2. Rights Guard: Check if the user has the specific permission (e.g., 'ADM_VIEW')
+  // 2. If a specific right is required but the user doesn't have it
   if (requiredRight && !can(requiredRight)) {
     console.warn(`Access Denied: Missing right [${requiredRight}]`);
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace />; 
   }
 
+  // Permission granted
   return <Outlet />;
 };
 

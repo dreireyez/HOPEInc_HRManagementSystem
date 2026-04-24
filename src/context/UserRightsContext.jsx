@@ -7,36 +7,43 @@ const UserRightsContext = createContext({});
 export const UserRightsProvider = ({ children }) => {
   const { user } = useAuth();
   const [rights, setRights] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRights = async () => {
-      if (user) {
-        setLoading(true);
+      if (!user) {
+        setRights({});
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
         const { data, error } = await supabase
           .from('usermodule_rights')
           .select('right_id, right_value')
           .eq('userid', user.id);
 
+        if (error) throw error;
+
         if (data) {
-          // We convert the database rows into a "Map" 
-          // Result looks like: { EMP_ADD: false, EMP_VIEW: true }
           const rightsMap = data.reduce((acc, row) => {
             acc[row.right_id] = row.right_value === 1;
             return acc;
           }, {});
           setRights(rightsMap);
         }
+      } catch (err) {
+        console.error("Error fetching rights:", err.message);
+        setRights({}); 
+      } finally {
         setLoading(false);
-      } else {
-        setRights({});
       }
     };
 
     fetchRights();
   }, [user]);
 
-  // This is the magic helper function for your teammates
   const can = (rightId) => !!rights[rightId];
 
   return (

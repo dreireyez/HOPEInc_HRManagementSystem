@@ -8,48 +8,67 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Define the function that checks the database
+    let mounted = true;
+
     const handleAuthStateChange = async (event, session) => {
-      if (session?.user) {
-        // --- THE LOGIN GUARD START ---
-        const { data, error } = await supabase
-          .from('user') // Matches your table name in Supabase
-          .select('record_status')
-          .eq('userid', session.user.id)
-          .single();
-
-        if (data?.record_status === 'INACTIVE') {
-          // If they aren't ACTIVE, kick them out immediately!
-          await supabase.auth.signOut();
-          setUser(null);
-          alert("Access Denied: Your account is currently INACTIVE.");
-          return;
-        }
-        // --- THE LOGIN GUARD END ---
-
-        setUser(session.user);
-      } else {
-        setUser(null);
+      // Only trigger the "Synchronizing" overlay for major identity changes
+      if (event === 'INITIAL' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setLoading(true);
       }
-      setLoading(false);
+
+      if (session?.user) {
+        try {
+          const { data } = await supabase
+            .from('user')
+            .select('record_status')
+            .eq('userid', session.user.id)
+            .single();
+
+          if (mounted) {
+            if (data?.record_status === 'INACTIVE') {
+              await supabase.auth.signOut();
+              setUser(null);
+              alert("Access Denied: Your account is currently INACTIVE.");
+            } else {
+              setUser(session.user);
+            }
+          }
+        } catch (err) {
+          console.error("Auth Guard Error:", err);
+          if (mounted) setUser(null);
+        }
+      } else {
+        if (mounted) setUser(null);
+      }
+      
+      if (mounted) setLoading(false);
     };
 
-    // 2. Run the check immediately for the current session
+    // Initialize session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      handleAuthStateChange('SIGNED_IN', session);
+      handleAuthStateChange('INITIAL', session);
     });
 
-    // 3. This is the "Listener" that waits for logins/logouts
+    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       handleAuthStateChange(event, session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {!loading && children}
+      {!loading ? children : (
+        <div className="min-h-screen bg-[#0B0B0F] flex items-center justify-center">
+          <div className="text-white font-black animate-pulse tracking-widest text-xs uppercase">
+            Synchronizing...
+          </div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };
