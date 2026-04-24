@@ -88,9 +88,8 @@ export default function LoginPage() {
                 </button>
               </div>
               {isError && (
-                <p className="text-[11px] text-error font-medium flex items-center gap-1 mt-1 ml-1">
-                  <span className="material-symbols-outlined text-xs">info</span>
-                  Invalid credentials. Please try again.
+                <p className="text-[11px] text-error font-medium flex items-center gap-1 mt-1 ml-1 animate-pulse">
+                  <span className="material-symbols-outlined text-xs">info</span> Invalid credentials.
                 </p>
               )}
             </div>
