@@ -1,6 +1,5 @@
-import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import UserRightsContext from '../context/UserRightsContext';
+import { useRights } from '../context/UserRightsContext';
 
 /**
  * RoleGuard Component
@@ -11,7 +10,7 @@ import UserRightsContext from '../context/UserRightsContext';
  * @returns {JSX.Element} Outlet for authorized users or Navigate redirect for blocked users
  */
 const RoleGuard = () => {
-  const { currentUser } = useContext(UserRightsContext);
+  const { currentUser } = useRights();
 
   // Block access for regular users
   if (currentUser?.user_type === 'USER') {

@@ -7,18 +7,34 @@ const UserRightsContext = createContext({});
 export const UserRightsProvider = ({ children }) => {
   const { user } = useAuth();
   const [rights, setRights] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRights = async () => {
       if (!user) {
         setRights({});
+        setCurrentUser(null);
         setLoading(false);
         return;
       }
 
       setLoading(true);
       try {
+        // Fetch user details including user_type
+        const { data: userData, error: userError } = await supabase
+          .from('user')
+          .select('userid, user_type, record_status')
+          .eq('userid', user.id)
+          .single();
+
+        if (userError) throw userError;
+
+        if (userData) {
+          setCurrentUser(userData);
+        }
+
+        // Fetch user rights
         const { data, error } = await supabase
           .from('usermodule_rights')
           .select('right_id, right_value')
@@ -35,7 +51,8 @@ export const UserRightsProvider = ({ children }) => {
         }
       } catch (err) {
         console.error("Error fetching rights:", err.message);
-        setRights({}); 
+        setRights({});
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -47,7 +64,7 @@ export const UserRightsProvider = ({ children }) => {
   const can = (rightId) => !!rights[rightId];
 
   return (
-    <UserRightsContext.Provider value={{ rights, can, loading }}>
+    <UserRightsContext.Provider value={{ rights, can, loading, currentUser }}>
       {children}
     </UserRightsContext.Provider>
   );
