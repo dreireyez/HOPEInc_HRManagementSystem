@@ -71,6 +71,7 @@ INSERT INTO module VALUES ('Adm_Mod', 'Admin Module', 'ACTIVE', 'SEEDED');
 
 -- EMPLOYEE
 INSERT INTO rights VALUES ('EMP_VIEW','View Employees',1,'Emp_Mod','ACTIVE','SEEDED');
+INSERT INTO rights VALUES ('EMP_VIEW_ALL','View All Employees (Inactive)',1,'Emp_Mod','ACTIVE','SEEDED');
 INSERT INTO rights VALUES ('EMP_ADD','Add Employee',1,'Emp_Mod','ACTIVE','SEEDED');
 INSERT INTO rights VALUES ('EMP_EDIT','Edit Employee',1,'Emp_Mod','ACTIVE','SEEDED');
 INSERT INTO rights VALUES ('EMP_DEL','Soft Delete Employee',1,'Emp_Mod','ACTIVE','SEEDED');
@@ -95,3 +96,4 @@ INSERT INTO rights VALUES ('DEPT_DEL','Soft Delete Department',1,'Dept_Mod','ACT
 
 -- ADMIN
 INSERT INTO rights VALUES ('ADM_USER','Admin Activate User',1,'Adm_Mod','ACTIVE','SEEDED');
+INSERT INTO rights VALUES ('SYS_INTEGRITY','System Integrity (Trash/Recovery)',1,'Sys_Mod','ACTIVE','SEEDED');
