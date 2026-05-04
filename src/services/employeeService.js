@@ -31,6 +31,30 @@ export const getEmployees = async (userType) => {
 };
 
 /**
+ * Fetches a single employee by employee number.
+ * 
+ * @param {number | string} empNo - Employee number to fetch
+ * @returns {Promise<{data: Object | null, error: null | Error}>}
+ */
+export const getEmployee = async (empNo) => {
+  try {
+    const { data, error } = await supabase
+      .from('employee')
+      .select('*')
+      .eq('empno', empNo)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
  * Adds a new employee record to the database.
  * 
  * @param {Object} employeeData - Employee information to insert
@@ -65,7 +89,7 @@ export const updateEmployee = async (empNo, updateData) => {
     const { data, error } = await supabase
       .from('employee')
       .update(updateData)
-      .eq('emp_no', empNo)
+      .eq('empno', empNo)
       .select();
 
     if (error) {
@@ -89,7 +113,7 @@ export const softDeleteEmployee = async (empNo) => {
     const { data, error } = await supabase
       .from('employee')
       .update({ record_status: 'INACTIVE' })
-      .eq('emp_no', empNo)
+      .eq('empno', empNo)
       .select();
 
     if (error) {
@@ -113,7 +137,7 @@ export const recoverEmployee = async (empNo) => {
     const { data, error } = await supabase
       .from('employee')
       .update({ record_status: 'ACTIVE' })
-      .eq('emp_no', empNo)
+      .eq('empno', empNo)
       .select();
 
     if (error) {

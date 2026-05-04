@@ -16,12 +16,12 @@ export default function Layout() {
   // If no 'right' is provided, it's public (like Dashboard)
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'grid_view' },
-    { name: 'Employees', path: '/employees', icon: 'badge', right: 'EMP_VIEW' },
-    { name: 'History', path: '/jobhistory', icon: 'history', right: 'JH_VIEW' },
-    { name: 'Jobs', path: '/jobs', icon: 'work', right: 'JOB_VIEW' },
-    { name: 'Units', path: '/departments', icon: 'domain', right: 'DEPT_VIEW' },
-    { name: 'Admin', path: '/admin', icon: 'admin_panel_settings', right: 'ADM_USER' },
-    { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'SYS_INTEGRITY' },
+    { name: 'Employees', path: '/employees', icon: 'badge'},
+    { name: 'History', path: '/jobhistory', icon: 'history'},
+    { name: 'Jobs', path: '/jobs', icon: 'work'},
+    { name: 'Units', path: '/departments', icon: 'domain'},
+    { name: 'Admin', path: '/admin', icon: 'admin_panel_settings', right: 'ADM_USER'},
+    { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER'},
   ];
 
   // Filter items based on user rights

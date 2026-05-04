@@ -25,3 +25,12 @@ dist-ssr
 
 # Environment Variables
 .env
+
+# Graphify
+graphify-out/*
+.agent/
+run_ast.py
+run_cleanup.py
+run_build.py
+run_label.py
+run_merge.py

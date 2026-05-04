@@ -65,7 +65,7 @@ export const updateDept = async (deptCode, updateData) => {
     const { data, error } = await supabase
       .from('department')
       .update(updateData)
-      .eq('dept_code', deptCode)
+      .eq('deptCode', deptCode)
       .select();
 
     if (error) {
@@ -89,7 +89,7 @@ export const softDeleteDept = async (deptCode) => {
     const { data, error } = await supabase
       .from('department')
       .update({ record_status: 'INACTIVE' })
-      .eq('dept_code', deptCode)
+      .eq('deptCode', deptCode)
       .select();
 
     if (error) {
@@ -113,7 +113,7 @@ export const recoverDept = async (deptCode) => {
     const { data, error } = await supabase
       .from('department')
       .update({ record_status: 'ACTIVE' })
-      .eq('dept_code', deptCode)
+      .eq('deptCode', deptCode)
       .select();
 
     if (error) {
