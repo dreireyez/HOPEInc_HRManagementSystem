@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { useRights } from '../context/UserRightsContext';
 
-export default function DeletedItemsPage({ userRole = 'ADMIN' }) {
+export default function DeletedItemsPage() {
+  const { currentUser } = useRights();
+  const userRole = currentUser?.user_type || 'USER';
   const [activeTab, setActiveTab] = useState('Employees');
 
   // GATING: If a regular USER tries to access this URL, we show an Unauthorized state

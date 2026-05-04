@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import EmployeeListPage from './pages/EmployeeListPage';
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import JobHistory from './pages/JobHistory';
 import JobListPage from './pages/JobListPage';
 import DeptListPage from './pages/DeptListPage';
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/jobs" element={<JobListPage />} />
           <Route path="/departments" element={<DeptListPage />} />
           <Route path="/employees" element={<EmployeeListPage />} />
+          <Route path="/employees/:id" element={<EmployeeDetailPage />} />
           <Route path="/jobhistory" element={<JobHistory />} />
           
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']} />}>

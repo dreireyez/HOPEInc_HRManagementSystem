@@ -1,5 +1,90 @@
-export default function AddEmployeeModal({ isOpen, onClose }) {
+import { useState } from 'react';
+import { addEmployee } from '../../services/employeeService';
+
+export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
+  const [formData, setFormData] = useState({
+    empno: '',
+    firstname: '',
+    lastname: '',
+    gender: 'M',
+    email: '',
+    hiredate: '',
+    birthdate: '',
+    job_title: '',
+    dept: ''
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   if (!isOpen) return null;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleGenderChange = (gender) => {
+    setFormData(prev => ({
+      ...prev,
+      gender: gender
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      // Validate required fields
+      if (!formData.empno || !formData.firstname || !formData.lastname) {
+        setError('Employee No, First Name, and Last Name are required');
+        setLoading(false);
+        return;
+      }
+
+      // Add employee to database
+      const { data, error: submitError } = await addEmployee({
+        empno: formData.empno,
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        gender: formData.gender,
+        email: formData.email || null,
+        hiredate: formData.hiredate || null,
+        birthdate: formData.birthdate || null,
+        job_title: formData.job_title || null,
+        dept: formData.dept || null,
+        record_status: 'ACTIVE'
+      });
+
+      if (submitError) {
+        setError(submitError.message);
+      } else {
+        // Reset form and close modal on success
+        setFormData({
+          empno: '',
+          firstname: '',
+          lastname: '',
+          gender: 'M',
+          email: '',
+          hiredate: '',
+          birthdate: '',
+          job_title: '',
+          dept: ''
+        });
+        onSuccess?.();
+        onClose();
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-[#0B0B0F]/80 backdrop-blur-sm overflow-y-auto">
@@ -24,8 +109,15 @@ export default function AddEmployeeModal({ isOpen, onClose }) {
           </button>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mx-8 mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+            <p className="text-red-400 text-sm font-bold">{error}</p>
+          </div>
+        )}
+
         {/* Modal Content (Form) */}
-        <div className="px-8 pb-10 space-y-8 overflow-y-auto max-h-[70vh]">
+        <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-8 overflow-y-auto max-h-[70vh]">
           
           {/* Section: Personal Identity */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -35,17 +127,30 @@ export default function AddEmployeeModal({ isOpen, onClose }) {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">fingerprint</span>
                 <input 
                   className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold" 
-                  placeholder="EMP-2026-001" 
+                  placeholder="EMP-2026-001"
                   type="text"
+                  name="empno"
+                  value={formData.empno}
+                  onChange={handleInputChange}
+                  required
                 />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Gender</label>
               <div className="flex gap-2 p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
-                {['Male', 'Female', 'Other'].map((g) => (
-                  <button key={g} className="flex-1 py-3 rounded-xl text-zinc-500 text-xs font-black hover:text-white hover:bg-white/5 transition-all uppercase tracking-tighter">
-                    {g}
+                {['M', 'F'].map((g) => (
+                  <button 
+                    key={g}
+                    type="button"
+                    onClick={() => handleGenderChange(g)}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-tighter transition-all ${
+                      formData.gender === g
+                        ? 'bg-primary text-white'
+                        : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {g === 'M' ? 'Male' : 'Female'}
                   </button>
                 ))}
               </div>
@@ -53,14 +158,51 @@ export default function AddEmployeeModal({ isOpen, onClose }) {
           </div>
 
           {/* Section: Full Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">First Name</label>
+              <div className="relative group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">person</span>
+                <input 
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold" 
+                  placeholder="First name"
+                  type="text"
+                  name="firstname"
+                  value={formData.firstname}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Last Name</label>
+              <div className="relative group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">person</span>
+                <input 
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold" 
+                  placeholder="Last name"
+                  type="text"
+                  name="lastname"
+                  value={formData.lastname}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Email */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Full Name</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Email Address</label>
             <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">person</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">mail</span>
               <input 
                 className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold" 
-                placeholder="Enter complete legal name" 
-                type="text"
+                placeholder="employee@company.com"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
               />
             </div>
           </div>
@@ -68,25 +210,29 @@ export default function AddEmployeeModal({ isOpen, onClose }) {
           {/* Section: Roles & Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Job Designation</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Job Title</label>
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">work</span>
-                <select className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-10 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none font-bold">
-                  <option className="bg-[#1A1A24]">Software Engineer</option>
-                  <option className="bg-[#1A1A24]">HR Specialist</option>
-                  <option className="bg-[#1A1A24]">Product Manager</option>
-                  <option className="bg-[#1A1A24]">UX Designer</option>
-                </select>
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-zinc-600 pointer-events-none">expand_more</span>
+                <input 
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold"
+                  placeholder="Job title"
+                  type="text"
+                  name="job_title"
+                  value={formData.job_title}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Joining Date</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Hire Date</label>
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">calendar_today</span>
                 <input 
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none [color-scheme:dark] font-bold" 
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none [color-scheme:dark] font-bold"
                   type="date"
+                  name="hiredate"
+                  value={formData.hiredate}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -99,8 +245,11 @@ export default function AddEmployeeModal({ isOpen, onClose }) {
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">cake</span>
                 <input 
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none [color-scheme:dark] font-bold" 
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none [color-scheme:dark] font-bold"
                   type="date"
+                  name="birthdate"
+                  value={formData.birthdate}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -108,28 +257,34 @@ export default function AddEmployeeModal({ isOpen, onClose }) {
               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Department</label>
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">domain</span>
-                <select className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-10 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none font-bold">
-                  <option className="bg-[#1A1A24]">Technology</option>
-                  <option className="bg-[#1A1A24]">Operations</option>
-                  <option className="bg-[#1A1A24]">Human Resources</option>
-                  <option className="bg-[#1A1A24]">Sales & Marketing</option>
-                </select>
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-zinc-600 pointer-events-none">expand_more</span>
+                <input 
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold"
+                  placeholder="Department name"
+                  type="text"
+                  name="dept"
+                  value={formData.dept}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
           </div>
-        </div>
+        </form>
 
         {/* Modal Footer */}
         <div className="px-8 py-8 bg-white/[0.02] backdrop-blur-md flex items-center justify-end gap-4 border-t border-white/5">
           <button 
             onClick={onClose}
+            type="button"
             className="px-8 py-3 rounded-full text-zinc-400 font-bold text-sm hover:bg-white/5 transition-all"
           >
             Cancel
           </button>
-          <button className="px-10 py-3 rounded-full bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white font-black text-sm shadow-xl shadow-[#8A3DFF]/20 hover:scale-105 active:scale-95 transition-all">
-            Create Profile
+          <button 
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-10 py-3 rounded-full bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white font-black text-sm shadow-xl shadow-[#8A3DFF]/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Creating...' : 'Create Profile'}
           </button>
         </div>
       </div>
