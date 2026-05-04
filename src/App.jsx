@@ -14,7 +14,8 @@ import JobHistory from './pages/JobHistory';
 import JobListPage from './pages/JobListPage';
 import DeptListPage from './pages/DeptListPage';
 import Admin from './pages/Admin';
-import DeletedItemsPage from './pages/DeletedItemsPage'; // Verified file name
+import DeletedItems from './pages/DeletedItems';
+import Reports from './pages/Reports';
 
 export default function App() {
   return (
@@ -31,6 +32,11 @@ export default function App() {
           <Route path="/employees" element={<EmployeeListPage />} />
           <Route path="/employees/:id" element={<EmployeeDetailPage />} />
           <Route path="/jobhistory" element={<JobHistory />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/departments" element={<Departments />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/deleted-items" element={<DeletedItems />} />
+          <Route path="/reports" element={<Reports />} />
           
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']} />}>
             <Route path="/admin" element={<Admin />} />
