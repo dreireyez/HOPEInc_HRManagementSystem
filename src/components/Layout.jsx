@@ -3,7 +3,7 @@ import { useRights } from '../context/UserRightsContext';
 import supabase from '../lib/supabaseClient';
 
 export default function Layout() {
-  const { can } = useRights();
+  const { can, rights } = useRights();
   const navigate = useNavigate();
 
   // Task: Implement real logout logic
@@ -20,7 +20,6 @@ export default function Layout() {
     { name: 'History', path: '/jobhistory', icon: 'history'},
     { name: 'Jobs', path: '/jobs', icon: 'work'},
     { name: 'Units', path: '/departments', icon: 'domain'},
-    { name: 'Admin', path: '/admin', icon: 'admin_panel_settings', right: 'ADM_USER'},
     { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER'},
   ];
 
@@ -77,6 +76,20 @@ export default function Layout() {
               <span className="text-sm font-black">{item.name}</span>
             </NavLink>
           ))}
+          {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => `
+                flex items-center gap-4 px-6 py-3.5 rounded-full transition-all duration-200
+                ${isActive 
+                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20' 
+                  : 'text-zinc-500 hover:text-white hover:bg-white/5'}
+              `}
+            >
+              <span className="material-symbols-outlined">admin_panel_settings</span>
+              <span className="text-sm font-black">Admin</span>
+            </NavLink>
+          )}
         </nav>
       </aside>
 
@@ -92,6 +105,15 @@ export default function Layout() {
             <span className="text-[9px] font-black uppercase">{item.name}</span>
           </NavLink>
         ))}
+        {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
+          <NavLink 
+            to="/admin" 
+            className={({ isActive }) => `flex flex-col items-center gap-1 ${isActive ? 'text-[#8A3DFF]' : 'text-zinc-500'}`}
+          >
+            <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
+            <span className="text-[9px] font-black uppercase">Admin</span>
+          </NavLink>
+        )}
       </nav>
 
       {/* Main Content Area */}
