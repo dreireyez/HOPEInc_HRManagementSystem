@@ -90,17 +90,22 @@ export default function JobHistoryPanel({ empNo }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {history.map((row, idx) => (
-                <tr key={`${row.empNo}-${row.jobCode}-${row.effDate}`} className="group hover:bg-white/[0.02] transition-colors">
+              {history.map((row, idx) => {
+                const jobCode = row.jobCode ?? row.job_code ?? 'N/A';
+                const deptCode = row.deptCode ?? row.dept_code ?? 'N/A';
+                const effDate = row.effDate ?? row.eff_date ?? null;
+                const empNo = row.empNo ?? row.emp_no ?? '';
+                return (
+                <tr key={`${empNo}-${jobCode}-${effDate}-${idx}`} className="group hover:bg-white/[0.02] transition-colors">
                   <td className="px-8 py-6">
-                    <div className="font-bold text-white text-base">{row.jobCode}</div>
+                    <div className="font-bold text-white text-base">{jobCode}</div>
                     {idx === 0 && <p className="text-[9px] text-primary font-black uppercase tracking-widest">Current</p>}
                   </td>
-                  <td className="px-8 py-6 text-sm font-bold text-zinc-400">{row.deptCode || 'N/A'}</td>
+                  <td className="px-8 py-6 text-sm font-bold text-zinc-400">{deptCode}</td>
                   <td className="px-8 py-6">
-                    <p className="text-sm font-black text-white">{row.effDate ? new Date(row.effDate).toLocaleDateString() : 'N/A'}</p>
+                    <p className="text-sm font-black text-white">{effDate ? new Date(effDate).toLocaleDateString() : 'N/A'}</p>
                   </td>
-                  <td className="px-8 py-6 font-bold text-white">${row.salary ? row.salary.toLocaleString() : '0'}</td>
+                  <td className="px-8 py-6 font-bold text-white">${row.salary ? Number(row.salary).toLocaleString() : '0'}</td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       {/* Rubric: Edit gated by JH_EDIT */}
@@ -118,13 +123,27 @@ export default function JobHistoryPanel({ empNo }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
       </div>
 
-      <JobHistoryModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <JobHistoryModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        empNo={empNo}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          // Re-fetch job history after adding
+          const refetch = async () => {
+            const { data } = await getJobHistory(empNo, currentUser?.user_type || 'USER');
+            setHistory(data || []);
+          };
+          refetch();
+        }}
+      />
     </section>
   );
 }

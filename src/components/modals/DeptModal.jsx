@@ -15,8 +15,8 @@ export default function DeptModal({ isOpen, onClose, initialData = null, onSucce
   useEffect(() => {
     if (initialData) {
       setFormData({
-        code: initialData.code || '',
-        name: initialData.name || '',
+        code: initialData.deptCode || initialData.code || '',
+        name: initialData.deptName || initialData.name || '',
         color: initialData.color || '#2E5BFF'
       });
     } else {

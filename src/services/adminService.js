@@ -2,12 +2,22 @@ import supabase from '../lib/supabaseClient.js';
 
 /**
  * Fetch all profiles from the user table.
+ * Security Logic: 'USER' type only sees ACTIVE records.
+ * 'ADMIN' and 'SUPERADMIN' see all records.
  * 
+ * @param {string} userType - Type of user ('USER', 'ADMIN', 'SUPERADMIN')
  * @returns {Promise<{data: Array | null, error: null | Error}>}
  */
-export const getUsers = async () => {
+export const getUsers = async (userType) => {
   try {
-    const { data, error } = await supabase.from('user').select('*');
+    let query = supabase.from('user').select('*');
+
+    // Apply filter for regular users - only show ACTIVE records
+    if (userType === 'USER') {
+      query = query.eq('record_status', 'ACTIVE');
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;

@@ -32,17 +32,25 @@ export const getEmployees = async (userType) => {
 
 /**
  * Fetches a single employee by employee number.
+ * Security Logic: 'USER' type can only see ACTIVE records.
  * 
  * @param {number | string} empNo - Employee number to fetch
+ * @param {string} userType - Type of user ('USER', 'ADMIN', 'SUPERADMIN')
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const getEmployee = async (empNo) => {
+export const getEmployee = async (empNo, userType) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('employee')
       .select('*')
-      .eq('empno', empNo)
-      .maybeSingle();
+      .eq('empno', empNo);
+
+    // Apply filter for regular users - only show ACTIVE records
+    if (userType === 'USER') {
+      query = query.eq('record_status', 'ACTIVE');
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
       throw error;

@@ -22,7 +22,7 @@ export default function EmployeeDetailPage() {
       setError(null);
       
       try {
-        const { data, error: fetchError } = await getEmployee(id);
+        const { data, error: fetchError } = await getEmployee(id, currentUser?.user_type || 'USER');
         
         if (fetchError) {
           setError(fetchError.message);
