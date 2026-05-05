@@ -1,6 +1,36 @@
 import supabase from '../lib/supabaseClient.js';
 
 /**
+ * Fetches ALL job history records across all employees.
+ * Security Logic: 'USER' type only sees ACTIVE records.
+ * Used by the standalone /jobhistory page.
+ * 
+ * @param {string} userType - Type of user ('USER', 'ADMIN', 'SUPERADMIN')
+ * @returns {Promise<{data: Array, error: null | Error}>}
+ */
+export const getAllJobHistory = async (userType) => {
+  try {
+    let query = supabase
+      .from('jobhistory')
+      .select('*');
+
+    if (userType === 'USER') {
+      query = query.eq('record_status', 'ACTIVE');
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
  * Fetches job history records for a specific employee.
  * Security Logic: 'USER' type only sees ACTIVE records.
  * 'ADMIN' and 'SUPERADMIN' see all records for the employee.
@@ -12,7 +42,7 @@ import supabase from '../lib/supabaseClient.js';
 export const getJobHistory = async (empNo, userType) => {
   try {
     let query = supabase
-      .from('jobHistory')
+      .from('jobhistory')
       .select('*')
       .eq('emp_no', empNo);
 
@@ -43,7 +73,7 @@ export const getJobHistory = async (empNo, userType) => {
 export const addJobHistory = async (historyData) => {
   try {
     const { data, error } = await supabase
-      .from('jobHistory')
+      .from('jobhistory')
       .insert([historyData])
       .select();
 
@@ -67,7 +97,7 @@ export const addJobHistory = async (historyData) => {
 export const updateJobHistory = async (id, updateData) => {
   try {
     const { data, error } = await supabase
-      .from('jobHistory')
+      .from('jobhistory')
       .update(updateData)
       .eq('id', id)
       .select();
@@ -91,7 +121,7 @@ export const updateJobHistory = async (id, updateData) => {
 export const softDeleteJobHistory = async (id) => {
   try {
     const { data, error } = await supabase
-      .from('jobHistory')
+      .from('jobhistory')
       .update({ record_status: 'INACTIVE' })
       .eq('id', id)
       .select();
@@ -115,7 +145,7 @@ export const softDeleteJobHistory = async (id) => {
 export const recoverJobHistory = async (id) => {
   try {
     const { data, error } = await supabase
-      .from('jobHistory')
+      .from('jobhistory')
       .update({ record_status: 'ACTIVE' })
       .eq('id', id)
       .select();

@@ -20,6 +20,7 @@ export default function Layout() {
     { name: 'History', path: '/jobhistory', icon: 'history'},
     { name: 'Jobs', path: '/jobs', icon: 'work'},
     { name: 'Units', path: '/departments', icon: 'domain'},
+    { name: 'Reports', path: '/reports', icon: 'analytics'},
     { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER'},
   ];
 

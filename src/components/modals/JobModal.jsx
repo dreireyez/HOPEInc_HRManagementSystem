@@ -15,8 +15,8 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
   useEffect(() => {
     if (initialData) {
       setFormData({
-        code: initialData.code || '',
-        desc: initialData.desc || '',
+        code: initialData.jobCode || initialData.code || '',
+        desc: initialData.jobDesc || initialData.desc || '',
         record_status: initialData.record_status || 'ACTIVE'
       });
     } else {

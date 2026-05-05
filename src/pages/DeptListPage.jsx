@@ -89,8 +89,11 @@ export default function DeptListPage() {
 
       {!loading && depts.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {depts.map((dept) => (
-            <div key={dept.deptCode} className="bg-[#1A1A24] border border-white/5 p-8 rounded-[2.5rem] group hover:border-primary/30 transition-all relative overflow-hidden">
+          {depts.map((dept) => {
+            const code = dept.deptCode ?? dept.dept_code ?? dept.code ?? '';
+            const name = dept.deptName ?? dept.dept_name ?? dept.name ?? 'Unnamed';
+            return (
+            <div key={code || dept.id} className="bg-[#1A1A24] border border-white/5 p-8 rounded-[2.5rem] group hover:border-primary/30 transition-all relative overflow-hidden">
               <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
               <div className="flex justify-between items-start mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
@@ -104,10 +107,11 @@ export default function DeptListPage() {
                   </button>
                 )}
               </div>
-              <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">{dept.deptCode}</h3>
-              <p className="text-xl font-bold text-white tracking-tight">{dept.deptName}</p>
+              <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">{code}</h3>
+              <p className="text-xl font-bold text-white tracking-tight">{name}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

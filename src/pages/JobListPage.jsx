@@ -3,6 +3,10 @@ import { useRights } from '../context/UserRightsContext';
 import JobModal from '../components/modals/JobModal';
 import { getJobs } from '../services/jobService';
 
+/**
+ * JobListPage — Organizational Role Management
+ * Features: sortable columns (Job Code, Description).
+ */
 export default function JobListPage() {
   const { can, currentUser } = useRights();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,42 +14,46 @@ export default function JobListPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
+  const [sortField, setSortField] = useState('jobCode');
+  const [sortDir, setSortDir] = useState('asc');
 
-  // Fetch jobs on mount and when modal closes
   const fetchJobs = async () => {
     setLoading(true);
     setError(null);
-    
     try {
       const { data, error: fetchError } = await getJobs(currentUser?.user_type || 'USER');
-      
-      if (fetchError) {
-        setError(fetchError.message);
-      } else {
-        setJobs(data || []);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      if (fetchError) { setError(fetchError.message); }
+      else { setJobs(data || []); }
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchJobs();
-  }, [currentUser?.user_type]);
+  useEffect(() => { fetchJobs(); }, [currentUser?.user_type]);
 
-  const handleOpenModal = (job = null) => {
-    setEditingJob(job);
-    setIsModalOpen(true);
+  const handleOpenModal = (job = null) => { setEditingJob(job); setIsModalOpen(true); };
+  const handleCloseModal = () => { setIsModalOpen(false); setEditingJob(null); fetchJobs(); };
+
+  const toggleSort = (field) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingJob(null);
-    // Refresh data after modal closes
-    fetchJobs();
-  };
+  const f = (row, camel, snake) => row[camel] ?? row[snake] ?? '';
+
+  const sorted = [...jobs].sort((a, b) => {
+    let aVal = f(a, sortField, sortField);
+    let bVal = f(b, sortField, sortField);
+    if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = (bVal || '').toLowerCase(); }
+    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const SortIcon = ({ field }) => (
+    <span className={`material-symbols-outlined text-[14px] ml-1 inline-block ${sortField === field ? 'text-primary' : 'text-zinc-700'}`}>
+      {sortField === field ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'swap_vert'}
+    </span>
+  );
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -56,13 +64,9 @@ export default function JobListPage() {
           </h1>
           <p className="text-zinc-500 font-bold text-sm uppercase tracking-widest">Organizational Role Management</p>
         </div>
-        
-        {/* Rubric: Add gated by JOB_ADD */}
         {can('JOB_ADD') && (
-          <button 
-            onClick={() => handleOpenModal()}
-            className="bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white px-8 py-4 rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-[#2E5BFF]/20 hover:scale-105 transition-all"
-          >
+          <button onClick={() => handleOpenModal()}
+            className="bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white px-8 py-4 rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-[#2E5BFF]/20 hover:scale-105 transition-all">
             Post New Job
           </button>
         )}
@@ -70,16 +74,12 @@ export default function JobListPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary mx-auto mb-4"></div>
-            <p className="text-zinc-500">Loading jobs...</p>
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary mx-auto mb-4"></div>
         </div>
       )}
-
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 mb-8">
-          <p className="text-red-400 font-bold">Error loading jobs: {error}</p>
+          <p className="text-red-400 font-bold">Error: {error}</p>
         </div>
       )}
 
@@ -94,34 +94,34 @@ export default function JobListPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-white/5 border-b border-white/5">
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Job Code</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Description</th>
-                
-                {/* Rubric: Status column hidden for USER (ADM_USER right) */}
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 cursor-pointer select-none" onClick={() => toggleSort('jobCode')}>
+                  Job Code<SortIcon field="jobCode" />
+                </th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 cursor-pointer select-none" onClick={() => toggleSort('jobDesc')}>
+                  Description<SortIcon field="jobDesc" />
+                </th>
                 {can('ADM_USER') && (
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-[#B71BCF]">Record Status</th>
                 )}
-                
                 <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {jobs.map((job) => (
-                <tr key={job.jobCode} className="group hover:bg-white/[0.02] transition-colors">
-                  <td className="px-8 py-6 font-mono text-xs text-primary font-bold">{job.jobCode}</td>
-                  <td className="px-8 py-6 text-white font-bold text-lg">{job.jobDesc}</td>
-                  
-                  {/* Rubric: Status data gated */}
+              {sorted.map((job) => {
+                const code = f(job, 'jobCode', 'job_code');
+                const desc = f(job, 'jobDesc', 'job_desc');
+                return (
+                <tr key={code || job.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="px-8 py-6 font-mono text-xs text-primary font-bold">{code}</td>
+                  <td className="px-8 py-6 text-white font-bold text-lg">{desc}</td>
                   {can('ADM_USER') && (
                     <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${job.record_status === 'ACTIVE' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-error/10 text-error border-error/20'}`}>
-                        {job.record_status}
-                      </span>
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                        job.record_status === 'ACTIVE' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-error/10 text-error border-error/20'
+                      }`}>{job.record_status}</span>
                     </td>
                   )}
-                  
                   <td className="px-8 py-6 text-right">
-                    {/* Rubric: Edit gated by JOB_EDIT */}
                     {can('JOB_EDIT') && (
                       <button onClick={() => handleOpenModal(job)} className="p-2 text-zinc-500 hover:text-white transition-all">
                         <span className="material-symbols-outlined">edit</span>
@@ -130,7 +130,8 @@ export default function JobListPage() {
                     {!can('JOB_EDIT') && <span className="text-[10px] text-zinc-800 font-black italic">VIEW</span>}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
