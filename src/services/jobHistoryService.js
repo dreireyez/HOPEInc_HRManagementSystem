@@ -44,7 +44,7 @@ export const getJobHistory = async (empNo, userType) => {
     let query = supabase
       .from('jobhistory')
       .select('*')
-      .eq('emp_no', empNo);
+      .eq('empno', empNo);
 
     // Apply filter for regular users - only show ACTIVE records
     if (userType === 'USER') {
@@ -99,7 +99,9 @@ export const updateJobHistory = async (id, updateData) => {
     const { data, error } = await supabase
       .from('jobhistory')
       .update(updateData)
-      .eq('id', id)
+      .eq('empno', id.empno)
+      .eq('jobcode', id.jobcode)
+      .eq('effdate', id.effdate)
       .select();
 
     if (error) {
@@ -123,7 +125,9 @@ export const softDeleteJobHistory = async (id) => {
     const { data, error } = await supabase
       .from('jobhistory')
       .update({ record_status: 'INACTIVE' })
-      .eq('id', id)
+      .eq('empno', id.empno)
+      .eq('jobcode', id.jobcode)
+      .eq('effdate', id.effdate)
       .select();
 
     if (error) {
@@ -147,7 +151,9 @@ export const recoverJobHistory = async (id) => {
     const { data, error } = await supabase
       .from('jobhistory')
       .update({ record_status: 'ACTIVE' })
-      .eq('id', id)
+      .eq('empno', id.empno)
+      .eq('jobcode', id.jobcode)
+      .eq('effdate', id.effdate)
       .select();
 
     if (error) {

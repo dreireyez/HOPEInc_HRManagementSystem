@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRights } from '../context/UserRightsContext';
 import JobModal from '../components/modals/JobModal';
 import { getJobs } from '../services/jobService';
@@ -17,7 +17,7 @@ export default function JobListPage() {
   const [sortField, setSortField] = useState('jobCode');
   const [sortDir, setSortDir] = useState('asc');
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -26,9 +26,9 @@ export default function JobListPage() {
       else { setJobs(data || []); }
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
-  };
+  }, [currentUser?.user_type]);
 
-  useEffect(() => { fetchJobs(); }, [currentUser?.user_type]);
+  useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   const handleOpenModal = (job = null) => { setEditingJob(job); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setEditingJob(null); fetchJobs(); };
@@ -38,7 +38,7 @@ export default function JobListPage() {
     else { setSortField(field); setSortDir('asc'); }
   };
 
-  const f = (row, camel, snake) => row[camel] ?? row[snake] ?? '';
+  const f = (row, camel, snake) => row[camel.toLowerCase()] ?? row[camel] ?? row[snake] ?? '';
 
   const sorted = [...jobs].sort((a, b) => {
     let aVal = f(a, sortField, sortField);
@@ -111,7 +111,7 @@ export default function JobListPage() {
                 const code = f(job, 'jobCode', 'job_code');
                 const desc = f(job, 'jobDesc', 'job_desc');
                 return (
-                <tr key={code || job.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <tr key={code || job.id || desc} className="group hover:bg-white/[0.02] transition-colors">
                   <td className="px-8 py-6 font-mono text-xs text-primary font-bold">{code}</td>
                   <td className="px-8 py-6 text-white font-bold text-lg">{desc}</td>
                   {can('ADM_USER') && (

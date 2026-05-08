@@ -1,45 +1,46 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import JobHistoryPanel from '../components/JobHistoryPanel';
 import { getEmployee } from '../services/employeeService';
 import { useRights } from '../context/UserRightsContext';
+import EditEmployeeModal from '../components/modals/EditEmployeeModal';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
   const navigate = useNavigate();
-  const { currentUser } = useRights();
+  const { currentUser, can } = useRights();
   const userRole = currentUser?.user_type || 'USER';
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Fetch employee data on mount or when id changes
-  useEffect(() => {
-    const fetchEmployeeData = async () => {
-      if (!id) return;
+  const fetchEmployeeData = useCallback(async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error: fetchError } = await getEmployee(id, currentUser?.user_type || 'USER');
       
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const { data, error: fetchError } = await getEmployee(id, currentUser?.user_type || 'USER');
-        
-        if (fetchError) {
-          setError(fetchError.message);
-          setEmployee(null);
-        } else {
-          setEmployee(data);
-        }
-      } catch (err) {
-        setError(err.message);
+      if (fetchError) {
+        setError(fetchError.message);
         setEmployee(null);
-      } finally {
-        setLoading(false);
+      } else {
+        setEmployee(data);
       }
-    };
+    } catch (err) {
+      setError(err.message);
+      setEmployee(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, currentUser?.user_type]);
 
+  useEffect(() => {
     fetchEmployeeData();
-  }, [id]);
+  }, [fetchEmployeeData]);
 
   // Default profile structure for display
   const profile = employee ? {
@@ -114,6 +115,16 @@ export default function EmployeeDetailPage() {
                   <span className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-black uppercase tracking-[0.2em]">
                     {profile.status}
                   </span>
+                  
+                  {can('EMP_EDIT') && (
+                    <button 
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="ml-0 md:ml-auto flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all text-xs font-black uppercase tracking-widest"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                      Edit Profile
+                    </button>
+                  )}
                 </div>
                 
                 <p className="text-xl text-zinc-400 font-bold">{profile.role} — <span className="text-zinc-600">{profile.dept}</span></p>
@@ -163,6 +174,16 @@ export default function EmployeeDetailPage() {
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6">
           <p className="text-yellow-400 font-bold">Employee not found. Please check the employee ID and try again.</p>
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {profile && (
+        <EditEmployeeModal 
+          isOpen={isEditModalOpen} 
+          onClose={() => setIsEditModalOpen(false)} 
+          initialData={employee}
+          onSuccess={fetchEmployeeData}
+        />
       )}
     </div>
   );

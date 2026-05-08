@@ -12,7 +12,7 @@ export default function JobHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState('eff_date');
+  const [sortField, setSortField] = useState('effdate');
   const [sortDir, setSortDir] = useState('desc');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -30,8 +30,8 @@ export default function JobHistory() {
     if (currentUser) fetchAll();
   }, [currentUser]);
 
-  // Helper to read fields supporting both camelCase and snake_case
-  const f = (row, camel, snake) => row[camel] ?? row[snake] ?? '';
+  // Helper to read plain lowercase, camelCase, and snake_case variants
+  const f = (row, camel, snake) => row[camel.toLowerCase()] ?? row[camel] ?? row[snake] ?? '';
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -96,17 +96,17 @@ export default function JobHistory() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-white/5 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
               <tr>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('emp_no')}>Employee No<SortIcon field="emp_no" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('job_code')}>Job Code<SortIcon field="job_code" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('dept_code')}>Dept Code<SortIcon field="dept_code" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('eff_date')}>Effective Date<SortIcon field="eff_date" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('empno')}>Employee No<SortIcon field="empno" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('jobcode')}>Job Code<SortIcon field="jobcode" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('deptcode')}>Dept Code<SortIcon field="deptcode" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('effdate')}>Effective Date<SortIcon field="effdate" /></th>
                 <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('salary')}>Salary<SortIcon field="salary" /></th>
                 {can('ADM_USER') && <th className="px-6 py-4 text-[#B71BCF]">Status</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
               {filtered.length > 0 ? filtered.map((item, idx) => (
-                <tr key={item.id || idx} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
+                <tr key={`${f(item, 'empNo', 'emp_no')}-${f(item, 'jobCode', 'job_code')}-${f(item, 'effDate', 'eff_date') || idx}`} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
                   <td className="px-6 py-4 font-mono text-xs text-primary font-bold">#{f(item, 'empNo', 'emp_no')}</td>
                   <td className="px-6 py-4 font-bold text-white">{f(item, 'jobCode', 'job_code') || 'N/A'}</td>
                   <td className="px-6 py-4 text-zinc-400 font-medium">{f(item, 'deptCode', 'dept_code') || 'N/A'}</td>

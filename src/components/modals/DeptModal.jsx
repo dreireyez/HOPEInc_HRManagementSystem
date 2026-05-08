@@ -15,8 +15,8 @@ export default function DeptModal({ isOpen, onClose, initialData = null, onSucce
   useEffect(() => {
     if (initialData) {
       setFormData({
-        code: initialData.deptCode || initialData.code || '',
-        name: initialData.deptName || initialData.name || '',
+        code: initialData.deptcode || initialData.deptCode || initialData.code || '',
+        name: initialData.deptname || initialData.deptName || initialData.name || '',
         color: initialData.color || '#2E5BFF'
       });
     } else {
@@ -61,15 +61,15 @@ export default function DeptModal({ isOpen, onClose, initialData = null, onSucce
       let result;
       if (initialData) {
         // Update existing department
-        result = await updateDept(initialData.deptCode || initialData.code, {
-          deptName: formData.name,
+        result = await updateDept(initialData.deptcode || initialData.deptCode || initialData.code, {
+          deptname: formData.name,
           record_status: formData.record_status || 'ACTIVE'
         });
       } else {
         // Create new department
         result = await addDept({
-          deptCode: formData.code,
-          deptName: formData.name,
+          deptcode: formData.code,
+          deptname: formData.name,
           record_status: 'ACTIVE'
         });
       }
@@ -118,11 +118,12 @@ export default function DeptModal({ isOpen, onClose, initialData = null, onSucce
             <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Dept Code</label>
             <div className="relative">
               <input 
-                className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-primary/20 transition-all font-bold placeholder-zinc-700 outline-none" 
+                className={`w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-primary/20 transition-all font-bold placeholder-zinc-700 outline-none ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="e.g. ENG-01"
                 name="code"
                 value={formData.code}
                 onChange={handleInputChange}
+                readOnly={!!initialData}
                 required
               />
               <span className="material-symbols-outlined absolute right-6 top-1/2 -translate-y-1/2 text-zinc-600">pin</span>

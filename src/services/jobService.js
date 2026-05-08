@@ -65,7 +65,7 @@ export const updateJob = async (jobCode, updateData) => {
     const { data, error } = await supabase
       .from('job')
       .update(updateData)
-      .eq('jobCode', jobCode)
+      .eq('jobcode', jobCode)
       .select();
 
     if (error) {
@@ -89,7 +89,7 @@ export const softDeleteJob = async (jobCode) => {
     const { data, error } = await supabase
       .from('job')
       .update({ record_status: 'INACTIVE' })
-      .eq('jobCode', jobCode)
+      .eq('jobcode', jobCode)
       .select();
 
     if (error) {
@@ -113,7 +113,7 @@ export const recoverJob = async (jobCode) => {
     const { data, error } = await supabase
       .from('job')
       .update({ record_status: 'ACTIVE' })
-      .eq('jobCode', jobCode)
+      .eq('jobcode', jobCode)
       .select();
 
     if (error) {

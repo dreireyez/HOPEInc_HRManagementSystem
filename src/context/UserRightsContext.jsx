@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 import supabase from '../lib/supabaseClient';
 import { useAuth } from './AuthContext';
@@ -38,7 +39,7 @@ export const UserRightsProvider = ({ children }) => {
         const { data, error } = await supabase
           .from('usermodule_rights')
           .select('right_id, right_value')
-          .eq('userid', user.id);
+          .eq('user_id', user.id);
 
         if (error) throw error;
 

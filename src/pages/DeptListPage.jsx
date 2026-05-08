@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRights } from '../context/UserRightsContext';
 import DeptModal from '../components/modals/DeptModal';
 import { getDepts } from '../services/departmentService';
@@ -12,7 +12,7 @@ export default function DeptListPage() {
   const [editingDept, setEditingDept] = useState(null);
 
   // Fetch departments on mount and when modal closes
-  const fetchDepts = async () => {
+  const fetchDepts = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -29,11 +29,11 @@ export default function DeptListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.user_type]);
 
   useEffect(() => {
     fetchDepts();
-  }, [currentUser?.user_type]);
+  }, [fetchDepts]);
 
   const handleOpenModal = (dept = null) => {
     setEditingDept(dept);
@@ -90,11 +90,11 @@ export default function DeptListPage() {
       {!loading && depts.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {depts.map((dept) => {
-            const code = dept.deptCode ?? dept.dept_code ?? dept.code ?? '';
-            const name = dept.deptName ?? dept.dept_name ?? dept.name ?? 'Unnamed';
+            const code = dept.deptcode ?? dept.deptCode ?? dept.dept_code ?? dept.code ?? '';
+            const name = dept.deptname ?? dept.deptName ?? dept.dept_name ?? dept.name ?? 'Unnamed';
             return (
-            <div key={code || dept.id} className="bg-[#1A1A24] border border-white/5 p-8 rounded-[2.5rem] group hover:border-primary/30 transition-all relative overflow-hidden">
-              <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
+            <div key={code || dept.id || name} className="bg-[#1A1A24] border border-white/5 p-8 rounded-[2.5rem] group hover:border-primary/30 transition-all relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
               <div className="flex justify-between items-start mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>corporate_fare</span>

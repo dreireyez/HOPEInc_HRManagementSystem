@@ -1,24 +1,14 @@
 import supabase from '../lib/supabaseClient.js';
 
 /**
- * Fetch all profiles from the user table.
- * Security Logic: 'USER' type only sees ACTIVE records.
- * 'ADMIN' and 'SUPERADMIN' see all records.
- * 
- * @param {string} userType - Type of user ('USER', 'ADMIN', 'SUPERADMIN')
+ * Fetch admin-manageable user records through a privileged RPC.
+ * This avoids direct SELECT policy recursion on public."user".
+ *
  * @returns {Promise<{data: Array | null, error: null | Error}>}
  */
-export const getUsers = async (userType) => {
+export const getUsers = async () => {
   try {
-    let query = supabase.from('user').select('*');
-
-    // Apply filter for regular users - only show ACTIVE records
-    if (userType === 'USER') {
-      query = query.eq('record_status', 'ACTIVE');
-    }
-
-    const { data, error } = await query;
-
+    const { data, error } = await supabase.rpc('admin_list_users');
     if (error) {
       throw error;
     }
@@ -30,45 +20,18 @@ export const getUsers = async (userType) => {
 };
 
 /**
- * Helper function to verify if a user is a SUPERADMIN.
- * 
- * @param {string} userId - User ID to check
- * @returns {Promise<boolean>} True if user is SUPERADMIN
- */
-const isSuperAdmin = async (userId) => {
-  const { data, error } = await supabase
-    .from('user')
-    .select('user_type')
-    .eq('userid', userId)
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data?.user_type === 'SUPERADMIN';
-};
-
-/**
  * Update record_status to 'ACTIVE'.
- * CRITICAL Logic: Prevents API-level modification of SUPERADMIN accounts.
+ * Uses an admin RPC so pending users are manageable without broad SELECT on user.
  * 
  * @param {string} userId - User ID to activate
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
 export const activateUser = async (userId) => {
   try {
-    const superadmin = await isSuperAdmin(userId);
-    if (superadmin) {
-      throw new Error("SUPERADMIN accounts cannot be modified");
-    }
-
-    const { data, error } = await supabase
-      .from('user')
-      .update({ record_status: 'ACTIVE' })
-      .eq('userid', userId)
-      .select();
-
+    const { data, error } = await supabase.rpc('admin_set_user_status', {
+      target_user_id: userId,
+      target_status: 'ACTIVE',
+    });
     if (error) {
       throw error;
     }
@@ -81,24 +44,17 @@ export const activateUser = async (userId) => {
 
 /**
  * Update record_status to 'INACTIVE'.
- * CRITICAL Logic: Prevents API-level modification of SUPERADMIN accounts.
+ * Uses an admin RPC so SUPERADMIN protection happens in the database function.
  * 
  * @param {string} userId - User ID to deactivate
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
 export const deactivateUser = async (userId) => {
   try {
-    const superadmin = await isSuperAdmin(userId);
-    if (superadmin) {
-      throw new Error("SUPERADMIN accounts cannot be modified");
-    }
-
-    const { data, error } = await supabase
-      .from('user')
-      .update({ record_status: 'INACTIVE' })
-      .eq('userid', userId)
-      .select();
-
+    const { data, error } = await supabase.rpc('admin_set_user_status', {
+      target_user_id: userId,
+      target_status: 'INACTIVE',
+    });
     if (error) {
       throw error;
     }

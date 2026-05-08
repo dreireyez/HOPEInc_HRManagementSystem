@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUsers, activateUser, deactivateUser } from '../services/adminService';
 import { useRights } from '../context/UserRightsContext';
 
@@ -16,20 +16,20 @@ export default function Admin() {
   const [error, setError] = useState(null);
   const { currentUser } = useRights();
 
-  useEffect(() => {
-    if (currentUser && currentUser.user_type !== 'USER') {
-      fetchUsers();
-    }
-  }, [currentUser?.user_type]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error: fetchErr } = await getUsers(currentUser?.user_type || 'USER');
     if (fetchErr) { setError(fetchErr.message); }
     else { setUsers(data || []); }
     setLoading(false);
-  };
+  }, [currentUser?.user_type]);
+
+  useEffect(() => {
+    if (currentUser && currentUser.user_type !== 'USER') {
+      Promise.resolve().then(fetchUsers);
+    }
+  }, [currentUser, fetchUsers]);
 
   const handleActivate = async (userId) => {
     const { error: err } = await activateUser(userId);

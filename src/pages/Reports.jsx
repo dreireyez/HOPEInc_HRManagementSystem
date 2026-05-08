@@ -20,6 +20,9 @@ export default function Reports() {
   const [selectedEmpNo, setSelectedEmpNo] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getHeadcount = (row) => row.activeheadcount ?? row.headcount ?? row.count ?? 0;
+  const getDeptName = (row) => row.deptname ?? row.dept_name ?? 'Unknown';
+
   // Fetch headcount and salary on mount
   useEffect(() => {
     const fetchReports = async () => {
@@ -56,7 +59,7 @@ export default function Reports() {
     fetchHistory();
   }, [selectedEmpNo]);
 
-  const totalHeadcount = headcountData.reduce((sum, d) => sum + (d.headcount || d.count || 0), 0);
+  const totalHeadcount = headcountData.reduce((sum, d) => sum + getHeadcount(d), 0);
   const barColors = [
     { color: 'from-[#00ffcc] to-[#2E5BFF]', shadow: 'shadow-[#00ffcc]/40' },
     { color: 'from-[#B71BCF] to-[#8A3DFF]', shadow: 'shadow-[#B71BCF]/40' },
@@ -96,13 +99,13 @@ export default function Reports() {
             <h2 className="text-2xl font-black text-white mb-8">Headcount Distribution</h2>
             <div className="space-y-6">
               {headcountData.length > 0 ? headcountData.map((item, idx) => {
-                const count = item.headcount || item.count || 0;
+                const count = getHeadcount(item);
                 const pct = totalHeadcount > 0 ? ((count / totalHeadcount) * 100).toFixed(1) : 0;
                 const c = barColors[idx % barColors.length];
                 return (
-                  <div key={item.dept_name || item.deptname || idx}>
+                  <div key={item.deptcode || getDeptName(item) || idx}>
                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
-                      <span>{item.dept_name || item.deptname || 'Unknown'}</span>
+                      <span>{getDeptName(item)}</span>
                       <span className="text-white">{count} Employees</span>
                     </div>
                     <div className="h-3 w-full bg-[#0B0B0F] rounded-full overflow-hidden border border-white/5">
@@ -124,11 +127,11 @@ export default function Reports() {
                 </tr></thead>
                 <tbody className="divide-y divide-white/5 text-white font-bold text-sm">
                   {headcountData.map((item, idx) => {
-                    const count = item.headcount || item.count || 0;
+                    const count = getHeadcount(item);
                     const pct = totalHeadcount > 0 ? ((count / totalHeadcount) * 100).toFixed(1) : '0';
                     return (
-                      <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="py-4">{item.dept_name || item.deptname || 'Unknown'}</td>
+                      <tr key={item.deptcode || idx} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-4">{getDeptName(item)}</td>
                         <td className="py-4 text-right font-black">{count}</td>
                         <td className="py-4 text-right text-zinc-500">{pct}%</td>
                       </tr>

@@ -91,10 +91,10 @@ export default function JobHistoryPanel({ empNo }) {
             </thead>
             <tbody className="divide-y divide-white/5">
               {history.map((row, idx) => {
-                const jobCode = row.jobCode ?? row.job_code ?? 'N/A';
-                const deptCode = row.deptCode ?? row.dept_code ?? 'N/A';
-                const effDate = row.effDate ?? row.eff_date ?? null;
-                const empNo = row.empNo ?? row.emp_no ?? '';
+                const jobCode = row.jobcode ?? row.jobCode ?? row.job_code ?? 'N/A';
+                const deptCode = row.deptcode ?? row.deptCode ?? row.dept_code ?? 'N/A';
+                const effDate = row.effdate ?? row.effDate ?? row.eff_date ?? null;
+                const empNo = row.empno ?? row.empNo ?? row.emp_no ?? '';
                 return (
                 <tr key={`${empNo}-${jobCode}-${effDate}-${idx}`} className="group hover:bg-white/[0.02] transition-colors">
                   <td className="px-8 py-6">

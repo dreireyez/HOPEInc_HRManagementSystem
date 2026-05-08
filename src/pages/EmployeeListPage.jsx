@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRights } from '../context/UserRightsContext';
 import { useNavigate } from 'react-router-dom';
 import { getEmployees, softDeleteEmployee } from '../services/employeeService';
@@ -23,7 +23,7 @@ export default function EmployeeListPage() {
   const [sortDir, setSortDir] = useState('asc');
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -32,11 +32,11 @@ export default function EmployeeListPage() {
       else { setEmployees(data || []); }
     } catch (err) { setError(err.message); setEmployees([]); }
     finally { setLoading(false); }
-  };
+  }, [currentUser?.user_type]);
 
   useEffect(() => {
     if (currentUser?.user_type) fetchEmployees();
-  }, [currentUser?.user_type]);
+  }, [currentUser?.user_type, fetchEmployees]);
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');

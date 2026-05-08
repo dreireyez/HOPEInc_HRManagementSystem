@@ -15,8 +15,8 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
   useEffect(() => {
     if (initialData) {
       setFormData({
-        code: initialData.jobCode || initialData.code || '',
-        desc: initialData.jobDesc || initialData.desc || '',
+        code: initialData.jobcode || initialData.jobCode || initialData.code || '',
+        desc: initialData.jobdesc || initialData.jobDesc || initialData.desc || '',
         record_status: initialData.record_status || 'ACTIVE'
       });
     } else {
@@ -38,14 +38,6 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
     }));
   };
 
-  const handleStatusChange = (e) => {
-    const status = e.target.checked ? 'ACTIVE' : 'INACTIVE';
-    setFormData(prev => ({
-      ...prev,
-      record_status: status
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -62,15 +54,15 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
       let result;
       if (initialData) {
         // Update existing job
-        result = await updateJob(initialData.jobCode || initialData.code, {
-          jobDesc: formData.desc,
+        result = await updateJob(initialData.jobcode || initialData.jobCode || initialData.code, {
+          jobdesc: formData.desc,
           record_status: formData.record_status
         });
       } else {
         // Create new job
         result = await addJob({
-          jobCode: formData.code,
-          jobDesc: formData.desc,
+          jobcode: formData.code,
+          jobdesc: formData.desc,
           record_status: formData.record_status
         });
       }
@@ -124,11 +116,12 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
             <div className="relative group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">fingerprint</span>
               <input 
-                className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold" 
+                className={`w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="e.g. ENG-PLAT-001"
                 name="code"
                 value={formData.code}
                 onChange={handleInputChange}
+                readOnly={!!initialData}
                 required
               />
             </div>
@@ -148,22 +141,7 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
             />
           </div>
 
-          {/* Record Status Toggle */}
-          <div className="flex items-center justify-between p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
-            <div>
-              <p className="font-black text-white text-sm uppercase tracking-tight">Record Status</p>
-              <p className="text-xs text-zinc-500 font-medium">{formData.record_status === 'ACTIVE' ? 'Active' : 'Inactive'} - Toggle visibility for recruitment pipelines.</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only peer"
-                checked={formData.record_status === 'ACTIVE'}
-                onChange={handleStatusChange}
-              />
-              <div className="w-14 h-7 bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#2E5BFF] peer-checked:to-[#B71BCF]"></div>
-            </label>
-          </div>
+
         </form>
 
         {/* Modal Footer */}

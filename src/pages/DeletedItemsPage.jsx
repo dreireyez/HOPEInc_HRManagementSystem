@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRights } from '../context/UserRightsContext';
 import { getEmployees, recoverEmployee } from '../services/employeeService';
 import { getJobs, recoverJob } from '../services/jobService';
@@ -19,19 +19,9 @@ export default function DeletedItemsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  if (userRole === 'USER') {
-    return (
-      <div className="h-[60vh] flex flex-col items-center justify-center text-center">
-        <span className="material-symbols-outlined text-6xl text-error mb-4">shield_person</span>
-        <h2 className="text-2xl font-black text-white">Access Restricted</h2>
-        <p className="text-zinc-500 font-bold max-w-xs">Only Administrators can access the Recovery Vault.</p>
-      </div>
-    );
-  }
-
   const tabs = ['Employees', 'Job History', 'Jobs', 'Departments'];
 
-  const fetchInactiveItems = async () => {
+  const fetchInactiveItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -52,9 +42,13 @@ export default function DeletedItemsPage() {
       setItems(data);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
-  };
+  }, [activeTab]);
 
-  useEffect(() => { fetchInactiveItems(); }, [activeTab]);
+  useEffect(() => {
+    if (userRole !== 'USER') {
+      fetchInactiveItems();
+    }
+  }, [fetchInactiveItems, userRole]);
 
   const handleRecover = async (item) => {
     try {
@@ -81,6 +75,16 @@ export default function DeletedItemsPage() {
     if (activeTab === 'Job History') return `ID: ${item.id}`;
     return '';
   };
+
+  if (userRole === 'USER') {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center text-center">
+        <span className="material-symbols-outlined text-6xl text-error mb-4">shield_person</span>
+        <h2 className="text-2xl font-black text-white">Access Restricted</h2>
+        <p className="text-zinc-500 font-bold max-w-xs">Only Administrators can access the Recovery Vault.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in duration-700">
