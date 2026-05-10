@@ -4,13 +4,11 @@ import JobHistoryPanel from '../components/JobHistoryPanel';
 import { getEmployee } from '../services/employeeService';
 import { useRights } from '../context/UserRightsContext';
 import EditEmployeeModal from '../components/modals/EditEmployeeModal';
-import { Button } from '../components/ui/Button';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
   const navigate = useNavigate();
   const { currentUser, can } = useRights();
-  const userRole = currentUser?.user_type || 'USER';
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

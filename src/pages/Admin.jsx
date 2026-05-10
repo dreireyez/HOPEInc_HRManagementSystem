@@ -44,6 +44,18 @@ export default function Admin() {
     else alert(`Failed to deactivate user: ${err.message}`);
   };
 
+  const filteredUsers = users.filter((user) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      (user.username && user.username.toLowerCase().includes(q)) ||
+      (user.userid && user.userid.toLowerCase().includes(q))
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedUsers = filteredUsers.slice((safeCurrentPage - 1) * PAGE_SIZE, safeCurrentPage * PAGE_SIZE);
+
   if (currentUser && currentUser.user_type === 'USER') {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-center">
@@ -56,25 +68,6 @@ export default function Admin() {
     );
   }
 
-  const filteredUsers = users.filter((user) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      (user.username && user.username.toLowerCase().includes(q)) ||
-      (user.userid && user.userid.toLowerCase().includes(q))
-    );
-  });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-  const paginatedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
-
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -85,7 +78,10 @@ export default function Admin() {
         <Input
           icon="search"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
           placeholder="Search users..."
           wrapperClassName="w-full md:w-[280px]"
         />
@@ -187,7 +183,7 @@ export default function Admin() {
             </Tbody>
           </Table>
           <Pagination
-            currentPage={currentPage}
+            currentPage={safeCurrentPage}
             totalItems={filteredUsers.length}
             pageSize={PAGE_SIZE}
             onPageChange={setCurrentPage}

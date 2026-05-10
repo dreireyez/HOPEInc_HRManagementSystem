@@ -41,8 +41,9 @@ The deployed app must include and link to:
 - Cannot soft-delete HR rows.
 - Can access Deleted Items.
 - Can see `stamp` fields.
+- Has `ADM_USER = 1` for admin user-management access.
+- Can activate and deactivate regular users.
 - Cannot modify SUPERADMIN accounts.
-- Admin user-management access must follow the resolved `ADM_USER` decision.
 
 ### USER
 

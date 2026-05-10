@@ -19,6 +19,11 @@ const PAGE_SIZE = 10;
 export default function EmployeeListPage() {
   const { can, currentUser } = useRights();
   const navigate = useNavigate();
+  const canSeeAdminMetadata =
+    currentUser?.user_type &&
+    currentUser.user_type !== 'USER';
+  const canManageRows =
+    can('EMP_EDIT') || can('EMP_DEL');
 
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -418,7 +423,7 @@ export default function EmployeeListPage() {
           </div>
 
           {/* STATUS */}
-          {can('ADM_USER') && (
+          {canSeeAdminMetadata && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
                 Status
@@ -653,9 +658,11 @@ export default function EmployeeListPage() {
             <div
               className={`
                 grid items-center gap-4 px-4 py-2
-                ${can('ADM_USER') 
-                  ? 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px_90px_60px_40px]' 
-                  : 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px]'}
+                ${canSeeAdminMetadata
+                  ? 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px_90px_60px_40px]'
+                  : canManageRows
+                    ? 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px_40px]'
+                    : 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px]'}
               `}
             >
               {[
@@ -695,7 +702,7 @@ export default function EmployeeListPage() {
                 </button>
               ))}
 
-              {can('ADM_USER') && (
+              {canSeeAdminMetadata && (
                 <>
                   <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
                     Stat
@@ -707,7 +714,7 @@ export default function EmployeeListPage() {
                 </>
               )}
 
-              {can('ADM_USER') && <div />}
+              {canManageRows && <div />}
             </div>
 
             {/* ROWS */}
@@ -729,9 +736,11 @@ export default function EmployeeListPage() {
   className={`
   group
   grid items-center gap-4
-  ${can('ADM_USER') 
-    ? 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px_90px_60px_40px]' 
-    : 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px]'}
+  ${canSeeAdminMetadata
+    ? 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px_90px_60px_40px]'
+    : canManageRows
+      ? 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px_40px]'
+      : 'grid-cols-[70px_2.4fr_1.5fr_1.3fr_110px_80px]'}
   px-4 py-5
   rounded-[1.6rem]
   bg-white
@@ -853,7 +862,7 @@ export default function EmployeeListPage() {
                   </div>
 
                   {/* Status */}
-                  {can('ADM_USER') && (
+                  {canSeeAdminMetadata && (
                     <div className="flex justify-center">
                       <Badge
                         variant={
@@ -868,7 +877,7 @@ export default function EmployeeListPage() {
                   )}
 
                   {/* Stamp */}
-                  {can('ADM_USER') && (
+                  {canSeeAdminMetadata && (
                     <div className="text-center">
                       <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[60px]">
                         {emp.stamp || '—'}
@@ -877,7 +886,7 @@ export default function EmployeeListPage() {
                   )}
 
                   {/* Actions */}
-                  {can('ADM_USER') && (
+                  {canManageRows && (
                     <div className="relative flex justify-center">
                       <button
                         onClick={() =>

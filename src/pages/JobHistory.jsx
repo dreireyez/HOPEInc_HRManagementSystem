@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRights } from '../context/UserRightsContext';
 
 import {
@@ -15,6 +15,11 @@ const PAGE_SIZE = 10;
 
 export default function JobHistory() {
   const { can, currentUser } = useRights();
+  const canSeeAllStatuses =
+    currentUser?.user_type &&
+    currentUser.user_type !== 'USER';
+  const canManageRows =
+    can('JH_EDIT') || can('JH_DEL');
 
   const [history, setHistory] =
     useState([]);
@@ -55,7 +60,7 @@ export default function JobHistory() {
   const [openMenuId, setOpenMenuId] =
     useState(null);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -77,11 +82,11 @@ export default function JobHistory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.user_type]);
 
   useEffect(() => {
     if (currentUser) fetchAll();
-  }, [currentUser]);
+  }, [currentUser, fetchAll]);
 
   const f = (
     row,
@@ -313,6 +318,12 @@ export default function JobHistory() {
     )
   );
 
+  useEffect(() => {
+    setCurrentPage((page) =>
+      Math.min(page, totalPages)
+    );
+  }, [totalPages]);
+
   const paginatedHistory =
     filtered.slice(
       (currentPage - 1) *
@@ -493,7 +504,7 @@ export default function JobHistory() {
           </div>
 
           {/* STATUS */}
-          {can('ADM_USER') && (
+          {canSeeAllStatuses && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
                 Status
@@ -705,9 +716,11 @@ export default function JobHistory() {
             <div
               className={`
           grid items-center gap-4 px-4 py-2
-          ${can('ADM_USER')
+          ${canSeeAllStatuses
                   ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_60px]'
-                  : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
+                  : canManageRows
+                    ? 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr_60px]'
+                    : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
                 }
         `}
             >
@@ -749,13 +762,13 @@ export default function JobHistory() {
                 </button>
               ))}
 
-              {can('ADM_USER') && (
+              {canSeeAllStatuses && (
                 <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
                   Status
                 </div>
               )}
 
-              {can('ADM_USER') && <div />}
+              {canManageRows && <div />}
             </div>
 
             {/* ROWS */}
@@ -766,6 +779,8 @@ export default function JobHistory() {
                   'empNo',
                   'emp_no'
                 )}-${idx}`;
+                const isMenuOpen =
+                  openMenuId === rowId;
 
                 return (
                   <div
@@ -773,9 +788,11 @@ export default function JobHistory() {
                     className={`
                 group
                 grid items-center gap-4
-                ${can('ADM_USER')
+                    ${canSeeAllStatuses
                         ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_60px]'
-                        : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
+                        : canManageRows
+                          ? 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr_60px]'
+                          : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
                       }
                 px-4 py-5
                 rounded-[1.6rem]
@@ -830,7 +847,7 @@ export default function JobHistory() {
                       ).toLocaleString()}
                     </div>
 
-                    {can('ADM_USER') && (
+                    {canSeeAllStatuses && (
                       <div className="flex justify-center">
                         <Badge
                           variant={
@@ -847,13 +864,12 @@ export default function JobHistory() {
                       </div>
                     )}
 
-                    {can('ADM_USER') && (
+                    {canManageRows && (
                       <div className="relative flex justify-end">
                         <button
                           onClick={() =>
                             setOpenMenuId(
-                              openMenuId ===
-                                rowId
+                              isMenuOpen
                                 ? null
                                 : rowId
                             )
@@ -872,6 +888,66 @@ export default function JobHistory() {
                             more_vert
                           </span>
                         </button>
+
+                        {isMenuOpen && (
+                          <div
+                            className="
+                      absolute right-0 top-full mt-2 z-50
+                      bg-white
+                      rounded-2xl
+                      border border-slate-200
+                      shadow-[0_20px_40px_-12px_rgba(0,0,0,0.2)]
+                      overflow-hidden
+                      min-w-[180px]
+                    "
+                          >
+                            {can('JH_EDIT') && (
+                              <button
+                                onClick={() => {
+                                  setOpenMenuId(
+                                    null
+                                  );
+                                  handleEdit(item);
+                                }}
+                                className="
+                        w-full text-left
+                        px-4 py-3
+                        text-sm font-medium
+                        text-slate-700
+                        hover:bg-slate-50
+                        transition-colors
+                      "
+                              >
+                                Edit Record
+                              </button>
+                            )}
+
+                            {can('JH_DEL') &&
+                              item.record_status ===
+                                'ACTIVE' && (
+                                <button
+                                  onClick={() => {
+                                    setOpenMenuId(
+                                      null
+                                    );
+                                    handleSoftDelete(
+                                      item
+                                    );
+                                  }}
+                                  className="
+                          w-full text-left
+                          px-4 py-3
+                          text-sm font-medium
+                          text-red-600
+                          hover:bg-red-50
+                          transition-colors
+                        "
+                                >
+                                  Deactivate
+                                </button>
+                              )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

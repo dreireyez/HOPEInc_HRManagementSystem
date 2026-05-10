@@ -15,6 +15,11 @@ const PAGE_SIZE = 10;
 
 export default function JobListPage() {
   const { can, currentUser } = useRights();
+  const canSeeAdminMetadata =
+    currentUser?.user_type &&
+    currentUser.user_type !== 'USER';
+  const canManageRows =
+    can('JOB_EDIT') || can('JOB_DEL');
 
   const [isModalOpen, setIsModalOpen] =
     useState(false);
@@ -320,7 +325,7 @@ export default function JobListPage() {
             />
           </div>
 
-          {can('ADM_USER') && (
+          {canSeeAdminMetadata && (
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
                 Status
@@ -468,9 +473,11 @@ export default function JobListPage() {
             <div
               className={`
                 grid items-center gap-4 px-4 py-2
-                ${can('ADM_USER')
+                ${canSeeAdminMetadata
                   ? 'grid-cols-[160px_2fr_120px_140px_60px]'
-                  : 'grid-cols-[160px_2fr]'
+                  : canManageRows
+                    ? 'grid-cols-[160px_2fr_60px]'
+                    : 'grid-cols-[160px_2fr]'
                 }
               `}
             >
@@ -509,19 +516,19 @@ export default function JobListPage() {
                 </button>
               ))}
 
-              {can('ADM_USER') && (
+              {canSeeAdminMetadata && (
                 <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
                   Status
                 </div>
               )}
 
-              {can('ADM_USER') && (
+              {canSeeAdminMetadata && (
                 <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
                   Stamp
                 </div>
               )}
 
-              {can('ADM_USER') && (
+              {canManageRows && (
                 <div />
               )}
             </div>
@@ -550,9 +557,11 @@ export default function JobListPage() {
                   className={`
                     group
                     grid items-center gap-4
-                    ${can('ADM_USER')
+                    ${canSeeAdminMetadata
                       ? 'grid-cols-[160px_2fr_120px_140px_60px]'
-                      : 'grid-cols-[160px_2fr]'
+                      : canManageRows
+                        ? 'grid-cols-[160px_2fr_60px]'
+                        : 'grid-cols-[160px_2fr]'
                     }
                     px-4 py-5
                     rounded-[1.6rem]
@@ -576,7 +585,7 @@ export default function JobListPage() {
                   </div>
 
                   {/* STATUS */}
-                  {can('ADM_USER') && (
+                  {canSeeAdminMetadata && (
                     <div className="flex justify-center">
                       <Badge
                         variant={
@@ -594,7 +603,7 @@ export default function JobListPage() {
                   )}
 
                   {/* STAMP */}
-                  {can('ADM_USER') && (
+                  {canSeeAdminMetadata && (
                     <div className="text-center">
                       <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 truncate">
                         {job.stamp ||
@@ -604,7 +613,7 @@ export default function JobListPage() {
                   )}
 
                   {/* ACTIONS */}
-                  {can('ADM_USER') && (
+                  {canManageRows && (
                     <div className="relative flex justify-end">
                       <button
                         onClick={() =>
