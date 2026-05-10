@@ -64,3 +64,28 @@ export const deactivateUser = async (userId) => {
     return { data: null, error: err };
   }
 };
+
+/**
+ * Update user_type to 'ADMIN' or 'USER'.
+ * Uses a SUPERADMIN-only RPC so role changes stay blocked for ADMIN
+ * and locked for inactive or SUPERADMIN target accounts.
+ *
+ * @param {string} userId - User ID to change role for
+ * @param {'ADMIN' | 'USER'} targetRole - Target role value
+ * @returns {Promise<{data: Object | null, error: null | Error}>}
+ */
+export const changeUserRole = async (userId, targetRole) => {
+  try {
+    const { data, error } = await supabase.rpc('admin_set_user_role', {
+      target_user_id: userId,
+      target_role: targetRole,
+    });
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
