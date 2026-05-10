@@ -84,9 +84,14 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ user, loading }}>
       {!loading ? children : (
-        <div className="min-h-screen bg-[#0B0B0F] flex items-center justify-center">
-          <div className="text-white font-black animate-pulse tracking-widest text-xs uppercase">
-            Synchronizing...
+        <div className="min-h-screen bg-[var(--color-surface)] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative h-12 w-12">
+              <div className="absolute inset-0 rounded-full border-[3px] border-[var(--color-outline-variant)]/40 border-t-[var(--color-primary-container)] animate-spin" />
+            </div>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.26em] text-[var(--color-on-surface-variant)] animate-pulse">
+              Loading…
+            </p>
           </div>
         </div>
       )}

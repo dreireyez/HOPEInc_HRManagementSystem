@@ -1,143 +1,731 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRights } from '../context/UserRightsContext';
 import JobModal from '../components/modals/JobModal';
-import { getJobs } from '../services/jobService';
 
-/**
- * JobListPage — Organizational Role Management
- * Features: sortable columns (Job Code, Description).
- */
+import {
+  getJobs,
+  softDeleteJob,
+} from '../services/jobService';
+
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { Pagination } from '../components/ui/Pagination';
+
+const PAGE_SIZE = 10;
+
 export default function JobListPage() {
   const { can, currentUser } = useRights();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] =
+    useState(false);
+
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
   const [error, setError] = useState(null);
-  const [editingJob, setEditingJob] = useState(null);
-  const [sortField, setSortField] = useState('jobCode');
-  const [sortDir, setSortDir] = useState('asc');
+
+  const [editingJob, setEditingJob] =
+    useState(null);
+
+  const [sortField, setSortField] =
+    useState('jobCode');
+
+  const [sortDir, setSortDir] =
+    useState('asc');
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const [searchQuery, setSearchQuery] =
+    useState('');
+
+  const [statusFilter, setStatusFilter] =
+    useState('ALL');
+
+  const [openMenuId, setOpenMenuId] =
+    useState(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const { data, error: fetchError } = await getJobs(currentUser?.user_type || 'USER');
-      if (fetchError) { setError(fetchError.message); }
-      else { setJobs(data || []); }
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
+      const { data, error: fetchError } =
+        await getJobs(
+          currentUser?.user_type || 'USER'
+        );
+
+      if (fetchError) {
+        setError(fetchError.message);
+      } else {
+        setJobs(data || []);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, [currentUser?.user_type]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
-  const handleOpenModal = (job = null) => { setEditingJob(job); setIsModalOpen(true); };
-  const handleCloseModal = () => { setIsModalOpen(false); setEditingJob(null); fetchJobs(); };
-
-  const toggleSort = (field) => {
-    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortField(field); setSortDir('asc'); }
+  const handleOpenModal = (job = null) => {
+    setEditingJob(job);
+    setIsModalOpen(true);
   };
 
-  const f = (row, camel, snake) => row[camel.toLowerCase()] ?? row[camel] ?? row[snake] ?? '';
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingJob(null);
+    fetchJobs();
+  };
 
-  const sorted = [...jobs].sort((a, b) => {
-    let aVal = f(a, sortField, sortField);
-    let bVal = f(b, sortField, sortField);
-    if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = (bVal || '').toLowerCase(); }
-    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const handleSoftDelete = async (
+    jobCode
+  ) => {
+    if (
+      !window.confirm(
+        `Deactivate job "${jobCode}"?`
+      )
+    )
+      return;
+
+    const { error: delErr } =
+      await softDeleteJob(jobCode);
+
+    if (delErr) {
+      alert(
+        `Failed to deactivate: ${delErr.message}`
+      );
+    } else {
+      fetchJobs();
+    }
+  };
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir((d) =>
+        d === 'asc' ? 'desc' : 'asc'
+      );
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const f = (row, camel, snake) =>
+    row[camel.toLowerCase()] ??
+    row[camel] ??
+    row[snake] ??
+    '';
+
+  const filteredJobs = jobs
+    .filter((job) => {
+      const code = f(
+        job,
+        'jobCode',
+        'job_code'
+      );
+
+      const desc = f(
+        job,
+        'jobDesc',
+        'job_desc'
+      );
+
+      if (
+        statusFilter !== 'ALL' &&
+        job.record_status !== statusFilter
+      ) {
+        return false;
+      }
+
+      if (!searchQuery) {
+        return true;
+      }
+
+      const q =
+        searchQuery.toLowerCase();
+
+      return (
+        code.toLowerCase().includes(q) ||
+        desc.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      let aVal = f(
+        a,
+        sortField,
+        sortField
+      );
+
+      let bVal = f(
+        b,
+        sortField,
+        sortField
+      );
+
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = (
+          bVal || ''
+        ).toLowerCase();
+      }
+
+      if (aVal < bVal)
+        return sortDir === 'asc'
+          ? -1
+          : 1;
+
+      if (aVal > bVal)
+        return sortDir === 'asc'
+          ? 1
+          : -1;
+
+      return 0;
+    });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      filteredJobs.length / PAGE_SIZE
+    )
+  );
+
+  const paginatedJobs =
+    filteredJobs.slice(
+      (currentPage - 1) * PAGE_SIZE,
+      currentPage * PAGE_SIZE
+    );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage((page) =>
+      Math.min(page, totalPages)
+    );
+  }, [totalPages]);
 
   const SortIcon = ({ field }) => (
-    <span className={`material-symbols-outlined text-[14px] ml-1 inline-block ${sortField === field ? 'text-primary' : 'text-zinc-700'}`}>
-      {sortField === field ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'swap_vert'}
+    <span
+      className={`material-symbols-outlined text-[14px] transition-all duration-200 ${sortField === field
+        ? 'text-[#1e3a5f]'
+        : 'text-slate-300'
+        }`}
+    >
+      {sortField === field
+        ? sortDir === 'asc'
+          ? 'north'
+          : 'south'
+        : 'unfold_more'}
     </span>
   );
 
+  const selectCls = `
+    bg-white
+    rounded-xl
+    border border-slate-200
+    px-3 py-2.5
+    text-sm
+    font-medium
+    text-slate-700
+    outline-none
+    transition-all duration-200
+    hover:border-slate-300
+    hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
+    focus:ring-2
+    focus:ring-[#1e3a5f]/20
+    focus:border-[#1e3a5f]
+  `;
+
   return (
-    <div className="animate-in fade-in duration-700">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+    <div className="flex flex-col gap-6">
+      {/* HEADER */}
+      <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-5xl font-black tracking-tighter text-white mb-2">
-            Job <span className="bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent">Catalogue</span>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+            Job Catalogue
           </h1>
-          <p className="text-zinc-500 font-bold text-sm uppercase tracking-widest">Organizational Role Management</p>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Organizational role
+            management
+          </p>
         </div>
+
         {can('JOB_ADD') && (
-          <button onClick={() => handleOpenModal()}
-            className="bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white px-8 py-4 rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-[#2E5BFF]/20 hover:scale-105 transition-all">
-            Post New Job
-          </button>
+          <Button
+            onClick={() =>
+              handleOpenModal()
+            }
+            className="px-5 py-2"
+          >
+            + Post New Job
+          </Button>
         )}
       </header>
 
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary mx-auto mb-4"></div>
+      {/* FILTERS */}
+      <div
+        className="
+          relative
+          rounded-[1.8rem]
+          px-5 pt-4 pb-3
+          flex flex-col gap-3
+          border border-slate-100
+          shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]
+          hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)]
+          hover:-translate-y-0.5
+          transition-all duration-300
+          bg-white
+        "
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
+              Search
+            </label>
+
+            <input
+              type="text"
+              placeholder="Search job code or description"
+              value={searchQuery}
+              onChange={(e) =>
+                setSearchQuery(
+                  e.target.value
+                )
+              }
+              className="
+                bg-white
+                rounded-xl
+                border border-slate-200
+                px-4 py-3
+                text-sm
+                font-medium
+                text-slate-700
+                outline-none
+                transition-all duration-200
+                hover:border-slate-300
+                hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
+                focus:ring-2
+                focus:ring-[#1e3a5f]/20
+                focus:border-[#1e3a5f]
+              "
+            />
+          </div>
+
+          {can('ADM_USER') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
+                Status
+              </label>
+
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value
+                  )
+                }
+                className={selectCls}
+              >
+                <option value="ALL">
+                  All
+                </option>
+
+                <option value="ACTIVE">
+                  Active
+                </option>
+
+                <option value="INACTIVE">
+                  Inactive
+                </option>
+              </select>
+            </div>
+          )}
+
+          <div className="ml-auto">
+            <div
+              className="
+                bg-slate-100
+                rounded-full
+                px-4 py-2
+                text-[12px]
+                font-semibold
+                text-slate-500
+                border border-slate-200
+              "
+            >
+              {filteredJobs.length} result
+              {filteredJobs.length !== 1
+                ? 's'
+                : ''}
+            </div>
+          </div>
         </div>
-      )}
+
+        {(searchQuery ||
+          statusFilter !== 'ALL') && (
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold mr-1">
+                Filters
+              </span>
+
+              {searchQuery && (
+                <button
+                  onClick={() =>
+                    setSearchQuery('')
+                  }
+                  className="
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-[#1e3a5f]/10
+                  text-[#1e3a5f]
+                  border border-[#1e3a5f]/10
+                  px-3 py-1.5
+                  text-xs
+                  font-semibold
+                  hover:bg-[#1e3a5f]/15
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+                >
+                  "{searchQuery}"
+                  <span className="opacity-60">
+                    ×
+                  </span>
+                </button>
+              )}
+
+              {statusFilter !== 'ALL' && (
+                <button
+                  onClick={() =>
+                    setStatusFilter('ALL')
+                  }
+                  className="
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-slate-100
+                  text-slate-600
+                  border border-slate-200
+                  px-3 py-1.5
+                  text-xs
+                  font-semibold
+                  hover:bg-slate-200
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+                >
+                  {statusFilter}
+                  <span className="opacity-60">
+                    ×
+                  </span>
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('ALL');
+                }}
+                className="
+                text-[11px]
+                font-semibold
+                text-slate-400
+                hover:text-red-500
+                transition-colors
+                ml-1
+              "
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+      </div>
+
+      {/* ERROR */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 mb-8">
-          <p className="text-red-400 font-bold">Error: {error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600">
+          {error}
         </div>
       )}
 
-      {!loading && jobs.length === 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 text-center">
-          <p className="text-yellow-400 font-bold">No jobs found.</p>
+      {/* LOADING */}
+      {loading ? (
+        <div className="flex justify-center py-24">
+          <div className="w-10 h-10 border-2 border-slate-200 border-t-[#1e3a5f] rounded-full animate-spin" />
         </div>
-      )}
+      ) : (
+        <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-[0_4px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
+          <div className="flex flex-col gap-3">
+            {/* HEADER */}
+            <div
+              className={`
+                grid items-center gap-4 px-4 py-2
+                ${can('ADM_USER')
+                  ? 'grid-cols-[160px_2fr_120px_140px_60px]'
+                  : 'grid-cols-[160px_2fr]'
+                }
+              `}
+            >
+              {[
+                ['jobCode', 'Job Code'],
+                ['jobDesc', 'Description'],
+              ].map(([field, label]) => (
+                <button
+                  key={field}
+                  onClick={() =>
+                    toggleSort(field)
+                  }
+                  className="
+                    flex items-center gap-1
+                    text-[11px]
+                    font-mono
+                    font-bold
+                    uppercase
+                    tracking-[0.18em]
+                    text-slate-500
+                    hover:text-slate-800
+                    bg-slate-50
+                    hover:bg-slate-100
+                    border border-slate-200
+                    rounded-full
+                    px-3 py-1.5
+                    transition-all duration-200
+                    hover:-translate-y-0.5
+                    hover:shadow-[0_8px_18px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.05)]
+                    shadow-[0_4px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]
+                    w-fit
+                  "
+                >
+                  {label}
+                  <SortIcon field={field} />
+                </button>
+              ))}
 
-      {!loading && jobs.length > 0 && (
-        <div className="bg-[#1A1A24]/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-white/5 border-b border-white/5">
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 cursor-pointer select-none" onClick={() => toggleSort('jobCode')}>
-                  Job Code<SortIcon field="jobCode" />
-                </th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 cursor-pointer select-none" onClick={() => toggleSort('jobDesc')}>
-                  Description<SortIcon field="jobDesc" />
-                </th>
-                {can('ADM_USER') && (
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-[#B71BCF]">Record Status</th>
-                )}
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {sorted.map((job) => {
-                const code = f(job, 'jobCode', 'job_code');
-                const desc = f(job, 'jobDesc', 'job_desc');
-                return (
-                  <tr key={code || job.id || desc} className="group hover:bg-white/[0.02] transition-colors">
-                  <td className="px-8 py-6 font-mono text-xs text-primary font-bold">{code}</td>
-                  <td className="px-8 py-6 text-white font-bold text-lg">{desc}</td>
+              {can('ADM_USER') && (
+                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Status
+                </div>
+              )}
+
+              {can('ADM_USER') && (
+                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Stamp
+                </div>
+              )}
+
+              {can('ADM_USER') && (
+                <div />
+              )}
+            </div>
+
+            {/* ROWS */}
+            {paginatedJobs.map((job) => {
+              const code = f(
+                job,
+                'jobCode',
+                'job_code'
+              );
+
+              const desc = f(
+                job,
+                'jobDesc',
+                'job_desc'
+              );
+
+              return (
+                <div
+                  key={
+                    code ||
+                    job.id ||
+                    desc
+                  }
+                  className={`
+                    group
+                    grid items-center gap-4
+                    ${can('ADM_USER')
+                      ? 'grid-cols-[160px_2fr_120px_140px_60px]'
+                      : 'grid-cols-[160px_2fr]'
+                    }
+                    px-4 py-5
+                    rounded-[1.6rem]
+                    bg-white
+                    border border-slate-100
+                    shadow-[0_6px_18px_rgba(15,23,42,0.06),0_2px_6px_rgba(15,23,42,0.04)]
+                    hover:border-slate-200
+                    hover:shadow-[0_24px_50px_-12px_rgba(15,23,42,0.18),0_10px_24px_rgba(15,23,42,0.08)]
+                    hover:-translate-y-1
+                    transition-all duration-300
+                  `}
+                >
+                  {/* CODE */}
+                  <div className="font-mono font-bold text-[15px] text-slate-700 truncate">
+                    {code}
+                  </div>
+
+                  {/* DESCRIPTION */}
+                  <div className="text-[14px] font-semibold text-slate-700 truncate">
+                    {desc}
+                  </div>
+
+                  {/* STATUS */}
                   {can('ADM_USER') && (
-                    <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                        job.record_status === 'ACTIVE' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-error/10 text-error border-error/20'
-                      }`}>{job.record_status}</span>
-                    </td>
+                    <div className="flex justify-center">
+                      <Badge
+                        variant={
+                          job.record_status ===
+                            'ACTIVE'
+                            ? 'active'
+                            : 'inactive'
+                        }
+                      >
+                        {
+                          job.record_status
+                        }
+                      </Badge>
+                    </div>
                   )}
-                  <td className="px-8 py-6 text-right">
-                    {can('JOB_EDIT') && (
-                      <button onClick={() => handleOpenModal(job)} className="p-2 text-zinc-500 hover:text-white transition-all">
-                        <span className="material-symbols-outlined">edit</span>
+
+                  {/* STAMP */}
+                  {can('ADM_USER') && (
+                    <div className="text-center">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 truncate">
+                        {job.stamp ||
+                          '—'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* ACTIONS */}
+                  {can('ADM_USER') && (
+                    <div className="relative flex justify-end">
+                      <button
+                        onClick={() =>
+                          setOpenMenuId(
+                            openMenuId ===
+                              code
+                              ? null
+                              : code
+                          )
+                        }
+                        className="
+                          w-9 h-9
+                          rounded-xl
+                          flex items-center justify-center
+                          text-slate-500
+                          hover:bg-slate-100
+                          hover:text-slate-800
+                          transition-all duration-200
+                        "
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          more_vert
+                        </span>
                       </button>
-                    )}
-                    {!can('JOB_EDIT') && <span className="text-[10px] text-zinc-800 font-black italic">VIEW</span>}
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+
+                      {openMenuId ===
+                        code && (
+                          <div
+                            className="
+                            absolute right-0 top-full mt-2 z-50
+                            bg-white
+                            rounded-2xl
+                            border border-slate-200
+                            shadow-[0_20px_40px_-12px_rgba(0,0,0,0.2)]
+                            overflow-hidden
+                            min-w-[180px]
+                          "
+                          >
+                            {can(
+                              'JOB_EDIT'
+                            ) && (
+                                <button
+                                  onClick={() => {
+                                    setOpenMenuId(
+                                      null
+                                    );
+
+                                    handleOpenModal(
+                                      job
+                                    );
+                                  }}
+                                  className="
+                                w-full text-left
+                                px-4 py-3
+                                text-sm font-medium
+                                text-slate-700
+                                hover:bg-slate-50
+                                transition-colors
+                              "
+                                >
+                                  Edit Job
+                                </button>
+                              )}
+
+                            {can(
+                              'JOB_DEL'
+                            ) &&
+                              job.record_status ===
+                              'ACTIVE' && (
+                                <button
+                                  onClick={() => {
+                                    setOpenMenuId(
+                                      null
+                                    );
+
+                                    handleSoftDelete(
+                                      code
+                                    );
+                                  }}
+                                  className="
+                                  w-full text-left
+                                  px-4 py-3
+                                  text-sm font-medium
+                                  text-red-600
+                                  hover:bg-red-50
+                                  transition-colors
+                                "
+                                >
+                                  Deactivate
+                                </button>
+                              )}
+                          </div>
+                        )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* PAGINATION */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={
+                filteredJobs.length
+              }
+              pageSize={PAGE_SIZE}
+              onPageChange={
+                setCurrentPage
+              }
+            />
+          </div>
         </div>
       )}
 
-      <JobModal isOpen={isModalOpen} onClose={handleCloseModal} initialData={editingJob} />
+      <JobModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        initialData={editingJob}
+      />
     </div>
   );
 }

@@ -19,12 +19,16 @@ const ProtectedRoute = ({ allowedRoles, requiredRight }) => {
   const { user, loading: authLoading } = useAuth();
   const { can, currentUser, loading: rightsLoading } = useRights();
 
-  // Show a loading screen while we determine identity and rights
   if (authLoading || rightsLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0B0B0F]">
-        <div className="text-white font-black animate-pulse tracking-[0.3em] text-[10px] uppercase">
-          Verifying Security Clearance...
+      <div className="flex h-screen w-full items-center justify-center bg-[var(--color-surface)]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-[3px] border-[var(--color-outline-variant)]/40 border-t-[var(--color-primary-container)] animate-spin" />
+          </div>
+          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.26em] text-[var(--color-on-surface-variant)] animate-pulse">
+            Loading…
+          </p>
         </div>
       </div>
     );

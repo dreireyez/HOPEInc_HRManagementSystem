@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import JobHistoryModal from './modals/JobHistoryModal';
 import { getJobHistory } from '../services/jobHistoryService';
 import { useRights } from '../context/UserRightsContext';
+import { Button } from './ui/Button';
 
 export default function JobHistoryPanel({ empNo }) {
   const { can, currentUser } = useRights();
@@ -10,7 +11,6 @@ export default function JobHistoryPanel({ empNo }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch job history when empNo changes
   useEffect(() => {
     const fetchHistory = async () => {
       if (!empNo) return;
@@ -24,6 +24,7 @@ export default function JobHistoryPanel({ empNo }) {
         if (fetchError) {
           setError(fetchError.message);
         } else {
+          // Assuming data is returned in descending order (most recent first)
           setHistory(data || []);
         }
       } catch (err) {
@@ -37,98 +38,102 @@ export default function JobHistoryPanel({ empNo }) {
   }, [empNo, currentUser?.user_type]);
 
   return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between px-4">
-        <div>
-          <h3 className="text-2xl font-black text-white">Job History</h3>
-          <p className="text-sm text-zinc-500 font-bold uppercase tracking-tighter">Career progression & compensation</p>
+    <div className="bg-[var(--color-surface)] rounded-2xl p-8 shadow-outset h-full">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-[var(--color-primary-container)]">timeline</span>
+          <h3 className="font-sans text-2xl font-bold text-[var(--color-on-surface)]">Job History</h3>
         </div>
-        
-        {/* GATING: JH_ADD */}
         {can('JH_ADD') && (
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 border border-primary/20 text-primary font-black text-xs hover:bg-primary hover:text-white transition-all"
+            className="px-4 py-2 rounded-md bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover active:shadow-inset transition-all font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--color-primary-container)] flex items-center gap-2 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
-            Add Record
+            <span className="material-symbols-outlined text-[16px]">add</span> Add Role
           </button>
         )}
       </div>
 
-      <div className="bg-[#1A1A24]/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/5 overflow-hidden">
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto mb-3"></div>
-              <p className="text-zinc-500 text-sm">Loading job history...</p>
-            </div>
-          </div>
-        )}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[var(--color-primary-container)]"></div>
+        </div>
+      )}
 
-        {error && (
-          <div className="p-8 bg-red-500/10 border-t border-red-500/20">
-            <p className="text-red-400 font-bold text-sm">Error loading job history: {error}</p>
-          </div>
-        )}
+      {error && (
+        <div className="p-4 bg-[var(--color-error-container)] rounded-md shadow-inset text-[var(--color-on-error-container)]">
+          <p className="font-medium text-sm">Error loading job history: {error}</p>
+        </div>
+      )}
 
-        {!loading && !error && history.length === 0 && (
-          <div className="p-8 text-center">
-            <p className="text-zinc-500 font-bold">No job history records found.</p>
-          </div>
-        )}
+      {!loading && !error && history.length === 0 && (
+        <div className="p-12 text-center">
+          <p className="text-[var(--color-on-surface-variant)] font-medium">No job history records found.</p>
+        </div>
+      )}
 
-        {!loading && !error && history.length > 0 && (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-white/5">
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Job Code</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Department</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Effective Date</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Salary</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {history.map((row, idx) => {
-                const jobCode = row.jobcode ?? row.jobCode ?? row.job_code ?? 'N/A';
-                const deptCode = row.deptcode ?? row.deptCode ?? row.dept_code ?? 'N/A';
-                const effDate = row.effdate ?? row.effDate ?? row.eff_date ?? null;
-                const empNo = row.empno ?? row.empNo ?? row.emp_no ?? '';
-                return (
-                <tr key={`${empNo}-${jobCode}-${effDate}-${idx}`} className="group hover:bg-white/[0.02] transition-colors">
-                  <td className="px-8 py-6">
-                    <div className="font-bold text-white text-base">{jobCode}</div>
-                    {idx === 0 && <p className="text-[9px] text-primary font-black uppercase tracking-widest">Current</p>}
-                  </td>
-                  <td className="px-8 py-6 text-sm font-bold text-zinc-400">{deptCode}</td>
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-black text-white">{effDate ? new Date(effDate).toLocaleDateString() : 'N/A'}</p>
-                  </td>
-                  <td className="px-8 py-6 font-bold text-white">${row.salary ? Number(row.salary).toLocaleString() : '0'}</td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {/* Rubric: Edit gated by JH_EDIT */}
-                      {can('JH_EDIT') && (
-                        <button className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all"><span className="material-symbols-outlined">edit</span></button>
-                      )}
-                      {/* Rubric: Delete gated by JH_DEL */}
-                      {can('JH_DEL') && (
-                        <button className="p-2 text-error hover:bg-error/10 rounded-xl transition-all"><span className="material-symbols-outlined">delete</span></button>
-                      )}
-                      {/* Fallback for users with no write access */}
-                      {!can('JH_EDIT') && !can('JH_DEL') && (
-                        <span className="text-[10px] text-zinc-700 italic font-bold">VIEW ONLY</span>
-                      )}
+      {!loading && !error && history.length > 0 && (
+        <div className="relative pl-6 border-l-2 border-[var(--color-surface-container-highest)] space-y-8 mt-6">
+          {history.map((row, idx) => {
+            const isCurrent = idx === 0;
+            const jobCode = row.jobcode ?? row.jobCode ?? row.job_code ?? 'N/A';
+            const deptCode = row.deptcode ?? row.deptCode ?? row.dept_code ?? 'N/A';
+            const effDate = row.effdate ?? row.effDate ?? row.eff_date ?? null;
+            const empNoField = row.empno ?? row.empNo ?? row.emp_no ?? '';
+            
+            return (
+              <div key={`${empNoField}-${jobCode}-${effDate}-${idx}`} className="relative group">
+                {/* Timeline Node */}
+                {isCurrent ? (
+                  <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-[var(--color-primary-container)] border-4 border-[var(--color-surface)] shadow-[0_0_0_2px_var(--color-primary-container)] transition-transform group-hover:scale-110"></div>
+                ) : (
+                  <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-[var(--color-surface-variant)] border-4 border-[var(--color-surface)] shadow-[0_0_0_2px_var(--color-surface-variant)] transition-transform group-hover:scale-110"></div>
+                )}
+
+                {/* Timeline Card */}
+                <div className={`bg-[var(--color-surface)] rounded-xl p-5 transition-all duration-300 ${isCurrent ? 'shadow-inset border-l-4 border-[var(--color-primary-container)]' : 'border border-[var(--color-outline-variant)]/20 hover:shadow-inset'}`}>
+                  <div className="flex justify-between items-start mb-2 flex-wrap gap-4">
+                    <div>
+                      <h4 className="font-sans text-lg font-bold text-[var(--color-on-surface)] flex items-center gap-3">
+                        {jobCode}
+                        {isCurrent && (
+                          <span className="inline-block px-2 py-0.5 rounded-full bg-[var(--color-surface-dim)] font-mono text-[10px] text-[var(--color-on-surface)] font-bold uppercase tracking-wider shadow-inset">Current</span>
+                        )}
+                      </h4>
+                      <p className="font-mono text-[11px] font-bold text-[var(--color-primary-container)] uppercase tracking-widest mt-1">
+                        {deptCode} Dept
+                      </p>
                     </div>
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                    
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="font-mono text-[12px] font-medium text-[var(--color-on-surface-variant)]">
+                        {effDate ? new Date(effDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'} {isCurrent ? '- Present' : ''}
+                      </p>
+                      <p className="font-sans text-sm font-bold text-[var(--color-on-surface)]">
+                        ${row.salary ? Number(row.salary).toLocaleString() : '0'} / yr
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons (Hover Reveal) */}
+                  <div className="flex justify-end gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {can('JH_EDIT') && (
+                      <button className="p-2 text-[var(--color-primary-container)] bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover rounded-md transition-all cursor-pointer flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                      </button>
+                    )}
+                    {can('JH_DEL') && (
+                      <button className="p-2 text-[var(--color-error)] bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover hover:shadow-glow rounded-md transition-all cursor-pointer flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <JobHistoryModal 
         isOpen={isModalOpen} 
@@ -136,7 +141,6 @@ export default function JobHistoryPanel({ empNo }) {
         empNo={empNo}
         onSuccess={() => {
           setIsModalOpen(false);
-          // Re-fetch job history after adding
           const refetch = async () => {
             const { data } = await getJobHistory(empNo, currentUser?.user_type || 'USER');
             setHistory(data || []);
@@ -144,6 +148,6 @@ export default function JobHistoryPanel({ empNo }) {
           refetch();
         }}
       />
-    </section>
+    </div>
   );
 }

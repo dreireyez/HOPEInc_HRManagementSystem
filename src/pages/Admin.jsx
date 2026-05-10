@@ -1,27 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUsers, activateUser, deactivateUser } from '../services/adminService';
 import { useRights } from '../context/UserRightsContext';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/Input';
+import { Pagination } from '../components/ui/Pagination';
 
-/**
- * Admin Page — User Management Console
- * 
- * BUG-002 FIX: Component-level authorization guard via useRights().
- * HOOKS FIX: All hooks are called before any conditional returns to
- * comply with React's Rules of Hooks.
- */
+const PAGE_SIZE = 10;
+
 export default function Admin() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { currentUser } = useRights();
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error: fetchErr } = await getUsers(currentUser?.user_type || 'USER');
-    if (fetchErr) { setError(fetchErr.message); }
-    else { setUsers(data || []); }
+    if (fetchErr) setError(fetchErr.message);
+    else setUsers(data || []);
     setLoading(false);
   }, [currentUser?.user_type]);
 
@@ -34,128 +35,164 @@ export default function Admin() {
   const handleActivate = async (userId) => {
     const { error: err } = await activateUser(userId);
     if (!err) fetchUsers();
-    else alert("Failed to activate user: " + err.message);
+    else alert(`Failed to activate user: ${err.message}`);
   };
 
   const handleDeactivate = async (userId) => {
     const { error: err } = await deactivateUser(userId);
     if (!err) fetchUsers();
-    else alert("Failed to deactivate user: " + err.message);
+    else alert(`Failed to deactivate user: ${err.message}`);
   };
 
-  // Defense-in-depth: block USER access at component level (AFTER all hooks)
   if (currentUser && currentUser.user_type === 'USER') {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center text-center">
-        <span className="material-symbols-outlined text-6xl text-error mb-4">shield_person</span>
-        <h2 className="text-2xl font-black text-white">Access Restricted</h2>
-        <p className="text-zinc-500 font-bold max-w-xs">Only Administrators can access User Management.</p>
+        <span className="material-symbols-outlined text-6xl text-[var(--color-error)] mb-4">shield_person</span>
+        <h2 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">Access Restricted</h2>
+        <p className="text-[var(--color-on-surface-variant)] text-sm mt-2 max-w-xs">
+          Only Administrators can access User Management.
+        </p>
       </div>
     );
   }
 
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = users.filter((user) => {
     const q = searchQuery.toLowerCase();
-    return (user.username && user.username.toLowerCase().includes(q)) ||
-           (user.userid && user.userid.toLowerCase().includes(q));
+    return (
+      (user.username && user.username.toLowerCase().includes(q)) ||
+      (user.userid && user.userid.toLowerCase().includes(q))
+    );
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   return (
-    <div className="animate-in fade-in duration-700">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2">
-            User <span className="bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent">Management</span>
-          </h1>
-          <p className="text-zinc-500 font-bold text-sm uppercase tracking-widest">System Access & Privileges</p>
+          <h1 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">User Management</h1>
+          <p className="text-sm text-[var(--color-on-surface-variant)] mt-1">System access and privileges.</p>
         </div>
-        <div className="relative group w-full md:w-auto">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-primary transition-colors text-sm">search</span>
-          <input type="text" placeholder="Search users..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-[#1A1A24] border border-white/5 rounded-full py-3 pl-12 pr-6 text-sm text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none w-full md:w-64 placeholder:text-zinc-700 font-bold" />
-        </div>
+        <Input
+          icon="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search users..."
+          wrapperClassName="w-full md:w-[280px]"
+        />
       </header>
 
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto"></div>
-        </div>
-      )}
       {error && (
-        <div className="p-8 bg-red-500/10 border-t border-red-500/20 rounded-2xl mb-8">
-          <p className="text-red-400 font-bold text-sm">Error: {error}</p>
+        <div className="rounded-2xl bg-[var(--color-error-container)] border border-[var(--color-error)]/20 p-4 shadow-inset">
+          <p className="text-[var(--color-on-error-container)] font-medium text-sm">Error: {error}</p>
         </div>
       )}
 
-      {!loading && !error && (
-        <div className="bg-[#1A1A24]/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl mb-10">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white/5 border-b border-white/5">
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">User Details</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">User Type</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Status</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filteredUsers.map((user) => {
-                const initials = user.username ? user.username.substring(0, 2).toUpperCase() : 'U';
-                return (
-                  <tr key={user.userid} className="group hover:bg-white/[0.02] transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border border-white/5 ${user.user_type === 'SUPERADMIN' ? 'bg-gradient-to-br from-[#2E5BFF] to-[#B71BCF] text-white' : 'bg-zinc-800 text-zinc-400'}`}>
-                          {initials}
-                        </div>
-                        <div>
-                          <div className="font-bold text-white text-base">{user.username || 'Unknown'}</div>
-                          <div className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{user.userid}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                        user.user_type === 'SUPERADMIN' ? 'bg-[#B71BCF]/10 text-[#B71BCF] border-[#B71BCF]/20' :
-                        user.user_type === 'ADMIN' ? 'bg-[#2E5BFF]/10 text-[#2E5BFF] border-[#2E5BFF]/20' :
-                        'bg-zinc-800 text-zinc-400 border-white/5'
-                      }`}>
-                        {user.user_type}
-                        {user.user_type === 'SUPERADMIN' && <span className="material-symbols-outlined text-[10px]">lock</span>}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${user.record_status === 'ACTIVE' ? 'bg-[#00ffcc] shadow-[0_0_8px_rgba(0,255,204,0.6)]' : 'bg-zinc-600'}`}></div>
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${user.record_status === 'ACTIVE' ? 'text-white' : 'text-zinc-500'}`}>
-                          {user.record_status || 'INACTIVE'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      {user.user_type === 'SUPERADMIN' ? (
-                        <button disabled title="SUPERADMIN accounts cannot be modified."
-                          className="px-6 py-2 rounded-full bg-zinc-800/50 text-zinc-600 font-black text-[10px] uppercase tracking-widest border border-white/5 cursor-not-allowed flex items-center gap-2 ml-auto">
-                          <span className="material-symbols-outlined text-sm">lock</span>Protected
-                        </button>
-                      ) : user.record_status === 'ACTIVE' ? (
-                        <button onClick={() => handleDeactivate(user.userid)}
-                          className="px-6 py-2 rounded-full bg-error/10 text-error hover:bg-error/20 border border-error/20 font-black text-[10px] uppercase tracking-widest transition-all">
-                          Deactivate
-                        </button>
-                      ) : (
-                        <button onClick={() => handleActivate(user.userid)}
-                          className="px-6 py-2 rounded-full bg-[#00ffcc]/10 text-[#00ffcc] hover:bg-[#00ffcc]/20 border border-[#00ffcc]/20 font-black text-[10px] uppercase tracking-widest transition-all">
-                          Activate
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {loading ? (
+        <div className="surface-panel rounded-[var(--radius-xl)] py-20 flex items-center justify-center">
+          <div className="skeleton h-10 w-10 rounded-full" />
         </div>
+      ) : (
+        <>
+          <Table>
+            <Thead>
+              <Tr>
+                <Th>User Details</Th>
+                <Th>User Type</Th>
+                <Th>Status</Th>
+                <Th className="text-right">Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => {
+                  const initials = user.username ? user.username.substring(0, 2).toUpperCase() : 'U';
+                  return (
+                    <Tr key={user.userid}>
+                      <Td>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`table-lead-token table-lead-token-md font-mono font-bold text-sm ${
+                              user.user_type === 'SUPERADMIN' ? 'ring-2 ring-[var(--color-primary-container)]/18 ring-offset-2 ring-offset-[var(--color-surface)]' : ''
+                            }`}
+                          >
+                            {initials}
+                          </div>
+                          <div>
+                            <div className="font-bold text-[var(--color-on-surface)]">{user.username || 'Unknown'}</div>
+                            <div className="text-[10px] font-mono text-[var(--color-on-surface-variant)] uppercase tracking-[0.22em] mt-1">
+                              {user.userid}
+                            </div>
+                          </div>
+                        </div>
+                      </Td>
+                      <Td>
+                        <Badge
+                          variant={
+                            user.user_type === 'SUPERADMIN'
+                              ? 'primary'
+                              : user.user_type === 'ADMIN'
+                                ? 'active'
+                                : 'default'
+                          }
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {user.user_type}
+                            {user.user_type === 'SUPERADMIN' && (
+                              <span className="material-symbols-outlined text-[12px]">lock</span>
+                            )}
+                          </span>
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge variant={user.record_status === 'ACTIVE' ? 'active' : 'inactive'}>
+                          {user.record_status || 'INACTIVE'}
+                        </Badge>
+                      </Td>
+                      <Td className="text-right">
+                        {user.user_type === 'SUPERADMIN' ? (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-surface-container)] text-[var(--color-on-surface-variant)] text-[10px] font-mono uppercase tracking-[0.2em] font-bold shadow-inset">
+                            <span className="material-symbols-outlined text-[14px]">lock</span>
+                            Protected
+                          </div>
+                        ) : user.record_status === 'ACTIVE' ? (
+                          <Button onClick={() => handleDeactivate(user.userid)} variant="danger" size="sm" className="uppercase tracking-[0.18em]">
+                            Deactivate
+                          </Button>
+                        ) : (
+                          <Button onClick={() => handleActivate(user.userid)} variant="primary" size="sm" className="uppercase tracking-[0.18em]">
+                            Activate
+                          </Button>
+                        )}
+                      </Td>
+                    </Tr>
+                  );
+                })
+              ) : (
+                <Tr>
+                  <Td colSpan="4" className="py-10 text-center text-[var(--color-on-surface-variant)] font-medium">
+                    No users found.
+                  </Td>
+                </Tr>
+              )}
+            </Tbody>
+          </Table>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredUsers.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
     </div>
   );

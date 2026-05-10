@@ -1,134 +1,906 @@
 import { useState, useEffect } from 'react';
 import { useRights } from '../context/UserRightsContext';
-import { getAllJobHistory } from '../services/jobHistoryService';
 
-/**
- * JobHistory Page — Audit trail for all position and salary changes.
- * Supports both camelCase and snake_case column names from Supabase.
- */
+import {
+  getAllJobHistory,
+  softDeleteJobHistory,
+} from '../services/jobHistoryService';
+
+import { Badge } from '../components/ui/Badge';
+import { Pagination } from '../components/ui/Pagination';
+
+import JobHistoryModal from '../components/modals/JobHistoryModal';
+
+const PAGE_SIZE = 10;
+
 export default function JobHistory() {
   const { can, currentUser } = useRights();
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState('effdate');
-  const [sortDir, setSortDir] = useState('desc');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const [history, setHistory] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState(null);
+
+  const [searchQuery, setSearchQuery] =
+    useState('');
+
+  const [sortField, setSortField] =
+    useState('effdate');
+
+  const [sortDir, setSortDir] =
+    useState('desc');
+
+  const [statusFilter, setStatusFilter] =
+    useState('ALL');
+
+  const [jobFilter, setJobFilter] =
+    useState('ALL');
+
+  const [deptFilter, setDeptFilter] =
+    useState('ALL');
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const [editingRecord, setEditingRecord] =
+    useState(null);
+
+  const [isModalOpen, setIsModalOpen] =
+    useState(false);
+
+  const [openMenuId, setOpenMenuId] =
+    useState(null);
+
+  const fetchAll = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const {
+        data,
+        error: fetchErr,
+      } = await getAllJobHistory(
+        currentUser?.user_type || 'USER'
+      );
+
+      if (fetchErr) {
+        setError(fetchErr.message);
+      } else {
+        setHistory(data || []);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAll = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error: fetchErr } = await getAllJobHistory(currentUser?.user_type || 'USER');
-        if (fetchErr) { setError(fetchErr.message); }
-        else { setHistory(data || []); }
-      } catch (err) { setError(err.message); }
-      finally { setLoading(false); }
-    };
     if (currentUser) fetchAll();
   }, [currentUser]);
 
-  // Helper to read plain lowercase, camelCase, and snake_case variants
-  const f = (row, camel, snake) => row[camel.toLowerCase()] ?? row[camel] ?? row[snake] ?? '';
+  const f = (
+    row,
+    camel,
+    snake
+  ) =>
+    row[camel.toLowerCase()] ??
+    row[camel] ??
+    row[snake] ??
+    '';
+
+  const handleSoftDelete = async (
+    item
+  ) => {
+    const label = `Emp #${f(
+      item,
+      'empNo',
+      'emp_no'
+    )}`;
+
+    if (
+      !window.confirm(
+        `Deactivate record: ${label}?`
+      )
+    )
+      return;
+
+    const id = {
+      empno: f(
+        item,
+        'empNo',
+        'emp_no'
+      ),
+      jobcode: f(
+        item,
+        'jobCode',
+        'job_code'
+      ),
+      effdate: f(
+        item,
+        'effDate',
+        'eff_date'
+      ),
+    };
+
+    const { error: delErr } =
+      await softDeleteJobHistory(id);
+
+    if (delErr) {
+      alert(
+        `Failed to deactivate: ${delErr.message}`
+      );
+    } else {
+      fetchAll();
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingRecord({
+      empno: f(
+        item,
+        'empNo',
+        'emp_no'
+      ),
+      jobCode: f(
+        item,
+        'jobCode',
+        'job_code'
+      ),
+      deptCode: f(
+        item,
+        'deptCode',
+        'dept_code'
+      ),
+      effDate: f(
+        item,
+        'effDate',
+        'eff_date'
+      ),
+      salary: item.salary,
+
+      id: {
+        empno: f(
+          item,
+          'empNo',
+          'emp_no'
+        ),
+        jobcode: f(
+          item,
+          'jobCode',
+          'job_code'
+        ),
+        effdate: f(
+          item,
+          'effDate',
+          'eff_date'
+        ),
+      },
+    });
+
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingRecord(null);
+    fetchAll();
+  };
 
   const toggleSort = (field) => {
-    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortField(field); setSortDir('asc'); }
+    if (sortField === field) {
+      setSortDir((d) =>
+        d === 'asc'
+          ? 'desc'
+          : 'asc'
+      );
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
   };
 
   const filtered = history
-    .filter(item => {
-      if (statusFilter !== 'ALL' && item.record_status !== statusFilter) return false;
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      const empNo = String(f(item, 'empNo', 'emp_no'));
-      const jobCode = f(item, 'jobCode', 'job_code').toLowerCase();
-      const deptCode = f(item, 'deptCode', 'dept_code').toLowerCase();
-      return empNo.includes(q) || jobCode.includes(q) || deptCode.includes(q);
+    .filter((item) => {
+      if (
+        statusFilter !== 'ALL' &&
+        item.record_status !==
+        statusFilter
+      )
+        return false;
+
+      if (
+        jobFilter !== 'ALL' &&
+        f(
+          item,
+          'jobCode',
+          'job_code'
+        ) !== jobFilter
+      )
+        return false;
+
+      if (
+        deptFilter !== 'ALL' &&
+        f(
+          item,
+          'deptCode',
+          'dept_code'
+        ) !== deptFilter
+      )
+        return false;
+
+      if (!searchQuery)
+        return true;
+
+      const q =
+        searchQuery.toLowerCase();
+
+      return (
+        String(
+          f(
+            item,
+            'empNo',
+            'emp_no'
+          )
+        ).includes(q) ||
+        f(
+          item,
+          'jobCode',
+          'job_code'
+        )
+          .toLowerCase()
+          .includes(q) ||
+        f(
+          item,
+          'deptCode',
+          'dept_code'
+        )
+          .toLowerCase()
+          .includes(q)
+      );
     })
     .sort((a, b) => {
-      let aVal = f(a, sortField, sortField);
-      let bVal = f(b, sortField, sortField);
-      if (sortField === 'salary') { aVal = Number(aVal) || 0; bVal = Number(bVal) || 0; }
-      else { aVal = String(aVal); bVal = String(bVal); }
-      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      let aVal = f(
+        a,
+        sortField,
+        sortField
+      );
+
+      let bVal = f(
+        b,
+        sortField,
+        sortField
+      );
+
+      if (sortField === 'salary') {
+        aVal = Number(aVal) || 0;
+        bVal = Number(bVal) || 0;
+      } else {
+        aVal = String(aVal);
+        bVal = String(bVal);
+      }
+
+      if (aVal < bVal)
+        return sortDir === 'asc'
+          ? -1
+          : 1;
+
+      if (aVal > bVal)
+        return sortDir === 'asc'
+          ? 1
+          : -1;
+
       return 0;
     });
 
-  const SortIcon = ({ field }) => (
-    <span className={`material-symbols-outlined text-[14px] ml-1 inline-block ${sortField === field ? 'text-primary' : 'text-zinc-700'}`}>
-      {sortField === field ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'swap_vert'}
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchQuery,
+    statusFilter,
+    jobFilter,
+    deptFilter,
+  ]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      filtered.length / PAGE_SIZE
+    )
+  );
+
+  const paginatedHistory =
+    filtered.slice(
+      (currentPage - 1) *
+      PAGE_SIZE,
+      currentPage * PAGE_SIZE
+    );
+
+  const SortIcon = ({
+    field,
+  }) => (
+    <span
+      className={`material-symbols-outlined text-[14px] transition-all duration-200 ${sortField === field
+          ? 'text-[#1e3a5f]'
+          : 'text-slate-300'
+        }`}
+    >
+      {sortField === field
+        ? sortDir === 'asc'
+          ? 'north'
+          : 'south'
+        : 'unfold_more'}
     </span>
   );
 
+  const selectCls = `
+    bg-white
+    rounded-xl
+    border border-slate-200
+    px-3 py-2.5
+    text-sm
+    font-medium
+    text-slate-700
+    outline-none
+    transition-all duration-200
+    hover:border-slate-300
+    hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
+    focus:ring-2
+    focus:ring-[#1e3a5f]/20
+    focus:border-[#1e3a5f]
+  `;
+
   return (
-    <div className="p-8 space-y-6 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent tracking-tight">Job History</h1>
-          <p className="text-zinc-500 text-sm font-medium">Audit trail for all position and salary changes.</p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative group">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-sm">search</span>
-            <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              className="bg-[#1A1A24] border border-white/5 rounded-full py-2.5 pl-10 pr-4 text-sm text-white outline-none w-48 placeholder:text-zinc-700 font-bold" />
+    <div className="flex flex-col gap-6">
+      {/* FILTERS */}
+      <div
+        className="
+          relative
+          rounded-[1.8rem]
+          px-5 pt-4 pb-3
+          flex flex-col gap-3
+          border border-slate-100
+          shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]
+          hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)]
+          hover:-translate-y-0.5
+          transition-all duration-300
+          bg-white
+        "
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          {/* SEARCH */}
+          <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
+              Search
+            </label>
+
+            <input
+              type="text"
+              placeholder="Employee, job, or department"
+              value={searchQuery}
+              onChange={(e) =>
+                setSearchQuery(
+                  e.target.value
+                )
+              }
+              className="
+                bg-white
+                rounded-xl
+                border border-slate-200
+                px-4 py-3
+                text-sm
+                font-medium
+                text-slate-700
+                outline-none
+                transition-all duration-200
+                hover:border-slate-300
+                hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
+                focus:ring-2
+                focus:ring-[#1e3a5f]/20
+                focus:border-[#1e3a5f]
+              "
+            />
           </div>
-          {can('ADM_USER') && (
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="bg-[#1A1A24] border border-white/5 rounded-full py-2.5 px-4 text-sm text-white outline-none appearance-none font-bold">
-              <option value="ALL">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
+
+          {/* JOB FILTER */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
+              Job
+            </label>
+
+            <select
+              value={jobFilter}
+              onChange={(e) =>
+                setJobFilter(
+                  e.target.value
+                )
+              }
+              className={selectCls}
+            >
+              <option value="ALL">
+                All jobs
+              </option>
+
+              {[
+                ...new Set(
+                  history.map((i) =>
+                    f(
+                      i,
+                      'jobCode',
+                      'job_code'
+                    )
+                  )
+                ),
+              ]
+                .filter(Boolean)
+                .sort()
+                .map((job) => (
+                  <option
+                    key={job}
+                    value={job}
+                  >
+                    {job}
+                  </option>
+                ))}
             </select>
+          </div>
+
+          {/* DEPARTMENT FILTER */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
+              Department
+            </label>
+
+            <select
+              value={deptFilter}
+              onChange={(e) =>
+                setDeptFilter(
+                  e.target.value
+                )
+              }
+              className={selectCls}
+            >
+              <option value="ALL">
+                All departments
+              </option>
+
+              {[
+                ...new Set(
+                  history.map((i) =>
+                    f(
+                      i,
+                      'deptCode',
+                      'dept_code'
+                    )
+                  )
+                ),
+              ]
+                .filter(Boolean)
+                .sort()
+                .map((dept) => (
+                  <option
+                    key={dept}
+                    value={dept}
+                  >
+                    {dept}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* STATUS */}
+          {can('ADM_USER') && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
+                Status
+              </label>
+
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value
+                  )
+                }
+                className={selectCls}
+              >
+                <option value="ALL">
+                  All
+                </option>
+
+                <option value="ACTIVE">
+                  Active
+                </option>
+
+                <option value="INACTIVE">
+                  Inactive
+                </option>
+              </select>
+            </div>
           )}
+
+          {/* COUNT */}
+          <div className="ml-auto">
+            <div
+              className="
+                bg-slate-100
+                rounded-full
+                px-4 py-2
+                text-[12px]
+                font-semibold
+                text-slate-500
+                border border-slate-200
+              "
+            >
+              {filtered.length} result
+              {filtered.length !== 1
+                ? 's'
+                : ''}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {loading && <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div></div>}
-      {error && <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6"><p className="text-red-400 font-bold text-sm">Error: {error}</p></div>}
+        {/* ACTIVE FILTERS */}
+        {(searchQuery ||
+          statusFilter !== 'ALL' ||
+          jobFilter !== 'ALL' ||
+          deptFilter !== 'ALL') && (
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold mr-1">
+                Filters
+              </span>
 
-      {!loading && !error && (
-        <div className="bg-[#16161E]/50 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-white/5 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('empno')}>Employee No<SortIcon field="empno" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('jobcode')}>Job Code<SortIcon field="jobcode" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('deptcode')}>Dept Code<SortIcon field="deptcode" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('effdate')}>Effective Date<SortIcon field="effdate" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('salary')}>Salary<SortIcon field="salary" /></th>
-                {can('ADM_USER') && <th className="px-6 py-4 text-[#B71BCF]">Status</th>}
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {filtered.length > 0 ? filtered.map((item, idx) => (
-                <tr key={`${f(item, 'empNo', 'emp_no')}-${f(item, 'jobCode', 'job_code')}-${f(item, 'effDate', 'eff_date') || idx}`} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-4 font-mono text-xs text-primary font-bold">#{f(item, 'empNo', 'emp_no')}</td>
-                  <td className="px-6 py-4 font-bold text-white">{f(item, 'jobCode', 'job_code') || 'N/A'}</td>
-                  <td className="px-6 py-4 text-zinc-400 font-medium">{f(item, 'deptCode', 'dept_code') || 'N/A'}</td>
-                  <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
-                    {(f(item, 'effDate', 'eff_date')) ? new Date(f(item, 'effDate', 'eff_date')).toLocaleDateString() : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-white">${item.salary ? Number(item.salary).toLocaleString() : '0'}</td>
-                  {can('ADM_USER') && (
-                    <td className="px-6 py-4">
-                      <span className={`font-mono text-[10px] px-2 py-1 rounded border ${
-                        item.record_status === 'ACTIVE' ? 'text-green-400 bg-green-400/5 border-green-400/20' : 'text-red-400 bg-red-400/5 border-red-400/20'
-                      }`}>{item.record_status}</span>
-                    </td>
-                  )}
-                </tr>
-              )) : (
-                <tr><td colSpan="6" className="px-6 py-12 text-center text-zinc-500 font-bold">No job history records found.</td></tr>
+              {searchQuery && (
+                <button
+                  onClick={() =>
+                    setSearchQuery('')
+                  }
+                  className="
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-[#1e3a5f]/10
+                  text-[#1e3a5f]
+                  border border-[#1e3a5f]/10
+                  px-3 py-1.5
+                  text-xs
+                  font-semibold
+                  hover:bg-[#1e3a5f]/15
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+                >
+                  "{searchQuery}"
+                  <span className="opacity-60">
+                    ×
+                  </span>
+                </button>
               )}
-            </tbody>
-          </table>
+
+              {jobFilter !== 'ALL' && (
+                <button
+                  onClick={() =>
+                    setJobFilter('ALL')
+                  }
+                  className="
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-slate-100
+                  text-slate-600
+                  border border-slate-200
+                  px-3 py-1.5
+                  text-xs
+                  font-semibold
+                  hover:bg-slate-200
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+                >
+                  {jobFilter}
+                  <span className="opacity-60">
+                    ×
+                  </span>
+                </button>
+              )}
+
+              {deptFilter !== 'ALL' && (
+                <button
+                  onClick={() =>
+                    setDeptFilter('ALL')
+                  }
+                  className="
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-slate-100
+                  text-slate-600
+                  border border-slate-200
+                  px-3 py-1.5
+                  text-xs
+                  font-semibold
+                  hover:bg-slate-200
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+                >
+                  {deptFilter}
+                  <span className="opacity-60">
+                    ×
+                  </span>
+                </button>
+              )}
+
+              {statusFilter !== 'ALL' && (
+                <button
+                  onClick={() =>
+                    setStatusFilter(
+                      'ALL'
+                    )
+                  }
+                  className="
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-slate-100
+                  text-slate-600
+                  border border-slate-200
+                  px-3 py-1.5
+                  text-xs
+                  font-semibold
+                  hover:bg-slate-200
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+                >
+                  {statusFilter}
+                  <span className="opacity-60">
+                    ×
+                  </span>
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter(
+                    'ALL'
+                  );
+                  setJobFilter('ALL');
+                  setDeptFilter(
+                    'ALL'
+                  );
+                }}
+                className="
+                text-[11px]
+                font-semibold
+                text-slate-400
+                hover:text-red-500
+                transition-colors
+                ml-1
+              "
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+      </div>
+      {/* ERROR */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600">
+          {error}
         </div>
       )}
+
+      {/* LOADING */}
+      {loading ? (
+        <div className="flex justify-center py-24">
+          <div className="w-10 h-10 border-2 border-slate-200 border-t-[#1e3a5f] rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-[0_4px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
+          <div className="flex flex-col gap-3">
+
+            {/* HEADER */}
+            <div
+              className={`
+          grid items-center gap-4 px-4 py-2
+          ${can('ADM_USER')
+                  ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_60px]'
+                  : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
+                }
+        `}
+            >
+              {[
+                ['empno', 'Employee'],
+                ['jobcode', 'Job'],
+                ['deptcode', 'Department'],
+                ['effdate', 'Effective'],
+                ['salary', 'Salary'],
+              ].map(([field, label]) => (
+                <button
+                  key={field}
+                  onClick={() =>
+                    toggleSort(field)
+                  }
+                  className="
+              inline-flex items-center gap-1
+              text-[11px]
+              font-mono
+              font-bold
+              uppercase
+              tracking-[0.18em]
+              text-slate-500
+              hover:text-slate-800
+              bg-slate-50
+              hover:bg-slate-100
+              border border-slate-200
+              rounded-full
+              px-3 py-1.5
+              transition-all duration-200
+              hover:-translate-y-0.5
+              hover:shadow-[0_8px_18px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.05)]
+              shadow-[0_4px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]
+              w-fit
+            "
+                >
+                  {label}
+                  <SortIcon field={field} />
+                </button>
+              ))}
+
+              {can('ADM_USER') && (
+                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Status
+                </div>
+              )}
+
+              {can('ADM_USER') && <div />}
+            </div>
+
+            {/* ROWS */}
+            {paginatedHistory.map(
+              (item, idx) => {
+                const rowId = `${f(
+                  item,
+                  'empNo',
+                  'emp_no'
+                )}-${idx}`;
+
+                return (
+                  <div
+                    key={rowId}
+                    className={`
+                group
+                grid items-center gap-4
+                ${can('ADM_USER')
+                        ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_60px]'
+                        : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
+                      }
+                px-4 py-5
+                rounded-[1.6rem]
+                bg-white
+                border border-slate-100
+                shadow-[0_6px_18px_rgba(15,23,42,0.06),0_2px_6px_rgba(15,23,42,0.04)]
+                hover:border-slate-200
+                hover:shadow-[0_24px_50px_-12px_rgba(15,23,42,0.18),0_10px_24px_rgba(15,23,42,0.08)]
+                hover:-translate-y-1
+                transition-all duration-300
+              `}
+                  >
+                    <div className="font-mono font-bold text-[15px] text-slate-700 truncate">
+                      #
+                      {f(
+                        item,
+                        'empNo',
+                        'emp_no'
+                      )}
+                    </div>
+
+                    <div className="text-[14px] font-semibold text-slate-700 truncate">
+                      {f(
+                        item,
+                        'jobCode',
+                        'job_code'
+                      )}
+                    </div>
+
+                    <div className="text-[14px] font-medium text-slate-600 truncate">
+                      {f(
+                        item,
+                        'deptCode',
+                        'dept_code'
+                      )}
+                    </div>
+
+                    <div className="font-mono text-[13px] text-slate-600">
+                      {new Date(
+                        f(
+                          item,
+                          'effDate',
+                          'eff_date'
+                        )
+                      ).toLocaleDateString()}
+                    </div>
+
+                    <div className="font-mono font-semibold text-slate-700">
+                      $
+                      {Number(
+                        item.salary || 0
+                      ).toLocaleString()}
+                    </div>
+
+                    {can('ADM_USER') && (
+                      <div className="flex justify-center">
+                        <Badge
+                          variant={
+                            item.record_status ===
+                              'ACTIVE'
+                              ? 'active'
+                              : 'inactive'
+                          }
+                        >
+                          {
+                            item.record_status
+                          }
+                        </Badge>
+                      </div>
+                    )}
+
+                    {can('ADM_USER') && (
+                      <div className="relative flex justify-end">
+                        <button
+                          onClick={() =>
+                            setOpenMenuId(
+                              openMenuId ===
+                                rowId
+                                ? null
+                                : rowId
+                            )
+                          }
+                          className="
+                      w-9 h-9
+                      rounded-xl
+                      flex items-center justify-center
+                      text-slate-500
+                      hover:bg-slate-100
+                      hover:text-slate-800
+                      transition-all duration-200
+                    "
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            more_vert
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+            )}
+          </div>
+
+          {/* PAGINATION */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={
+                setCurrentPage
+              }
+            />
+          </div>
+        </div>
+      )}
+
+      <JobHistoryModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        empNo={editingRecord?.empno}
+        initialData={editingRecord}
+        onSuccess={handleModalClose}
+      />
     </div>
   );
 }
