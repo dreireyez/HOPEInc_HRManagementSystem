@@ -91,14 +91,19 @@ Record major HopeHRS project decisions here.
 
 ### Decision 6: Resolve ADMIN `ADM_USER` Conflict
 
-- Date:
+- Date: 2026-05-10
 - Owner: Team
-- Status: Open
+- Status: Accepted
 - Context: Sprint 3 requires Admin user management, but one rights matrix source lists `ADM_USER` as ADMIN = NO.
 - Options Considered: ADMIN has ADM_USER, only SUPERADMIN has ADM_USER, split activation from rights management
-- Decision: TODO: Team must decide before Admin Module implementation.
-- Reason: The app cannot implement consistent Admin UI and RLS without resolving this.
+- Decision: ADMIN has `ADM_USER = 1` and can activate/deactivate regular users. SUPERADMIN also has `ADM_USER = 1` and retains full control, including management of ADMIN accounts when needed.
+- Reason:
+  - Section 3.1 explicitly states that ADMIN (HR Manager) can activate/deactivate USER accounts.
+  - This matches standard HR workflow where HR managers approve and manage staff account activation.
+  - The conflicting rights matrix entry is treated as a source typo.
+  - SUPERADMIN remains the only role allowed to soft-delete HR records and modify SUPERADMIN accounts.
 - Impact:
-  - Admin route gating depends on this decision.
-  - UserManagementPage behavior depends on this decision.
-  - RLS for user management depends on this decision.
+  - Admin route gating may allow both ADMIN and SUPERADMIN where `ADM_USER` is the controlling right.
+  - UserManagementPage should allow ADMIN to activate/deactivate regular users.
+  - RLS for user management should permit ADMIN changes for non-SUPERADMIN targets only.
+  - SUPERADMIN protection rules remain in force.

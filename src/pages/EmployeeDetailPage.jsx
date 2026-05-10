@@ -9,7 +9,6 @@ export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
   const navigate = useNavigate();
   const { currentUser, can } = useRights();
-  const userRole = currentUser?.user_type || 'USER';
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,141 +41,192 @@ export default function EmployeeDetailPage() {
     fetchEmployeeData();
   }, [fetchEmployeeData]);
 
-  // Default profile structure for display
   const profile = employee ? {
     id: employee.empno,
     firstName: employee.firstname || 'N/A',
     lastName: employee.lastname || 'N/A',
     email: employee.email || 'Not provided',
+    phone: employee.phone || '+1 (555) 000-0000', // Mock if not in DB
     location: employee.location || 'Not specified',
-    joined: employee.hiredate || 'Not specified',
+    office: employee.office || 'Unassigned Desk', // Mock if not in DB
+    joined: employee.hiredate ? new Date(employee.hiredate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified',
     role: employee.job_title || 'Not assigned',
     dept: employee.dept || 'Not assigned',
+    manager: employee.manager || 'Unassigned', // Mock if not in DB
     status: employee.record_status === 'ACTIVE' ? 'Active' : 'Inactive',
     empNo: employee.empno
   } : null;
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 duration-700">
-      {/* Back Header */}
-      <button 
-        onClick={() => navigate('/employees')}
-        className="flex items-center gap-2 text-zinc-500 hover:text-primary transition-colors mb-8 group"
-      >
-        <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span className="text-[10px] font-black uppercase tracking-widest">Back to Directory</span>
-      </button>
+    <div className="max-w-7xl mx-auto flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500">
+      
+      {/* Action Bar */}
+      <div className="flex justify-between items-center mb-2 flex-wrap gap-4">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => navigate('/employees')}
+            className="p-2 rounded-full bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover hover:-translate-y-[1px] active:shadow-inset transition-all text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)] flex items-center justify-center h-8 w-8 cursor-pointer group"
+          >
+            <span className="material-symbols-outlined text-sm group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          </button>
+          <span className="font-mono text-[11px] uppercase tracking-widest text-[var(--color-on-surface-variant)] font-bold">Back to Directory</span>
+        </div>
+        
+        {profile && (
+          <div className="flex gap-4">
+            {can('EMP_EDIT') && (
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-6 py-2 rounded-lg bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover active:shadow-inset font-mono text-[11px] uppercase tracking-widest font-bold text-[var(--color-primary-container)] hover:text-[var(--color-primary)] transition-all cursor-pointer flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit</span> Edit Profile
+              </button>
+            )}
+            <button className="px-6 py-2 rounded-lg bg-[var(--color-primary-container)] shadow-outset hover:shadow-outset-hover hover:shadow-glow active:shadow-inset font-mono text-[11px] uppercase tracking-widest font-bold text-white hover:bg-[var(--color-primary)] transition-all cursor-pointer flex items-center gap-2">
+              <span className="material-symbols-outlined text-[16px]">download</span> Download PDF
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary mx-auto mb-4"></div>
-            <p className="text-zinc-500">Loading employee profile...</p>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[var(--color-primary-container)] mx-auto mb-4"></div>
         </div>
       )}
 
-      {/* Error State */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 mb-8">
-          <p className="text-red-400 font-bold">Error loading employee: {error}</p>
+        <div className="bg-[var(--color-error-container)] border border-[var(--color-error)]/20 rounded-md p-4 shadow-inset">
+          <p className="text-[var(--color-on-error-container)] font-medium text-sm">Error loading employee: {error}</p>
         </div>
       )}
 
-      {/* Profile Content */}
+      {!loading && !profile && !error && (
+        <div className="bg-[var(--color-surface-dim)] rounded-md p-6 text-center shadow-inset">
+          <p className="text-[var(--color-on-surface-variant)] font-medium font-sans">Employee not found.</p>
+        </div>
+      )}
+
       {!loading && profile && (
         <>
-          {/* Profile Header Block */}
-          <section className="bg-[#1A1A24]/60 backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white/5 relative overflow-hidden mb-8">
-            {/* Background Accents */}
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#2E5BFF]/10 rounded-full blur-[100px]"></div>
+          {/* Profile Header Bento */}
+          <div className="grid grid-cols-12 gap-6 mb-6">
             
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-              {/* Avatar with Status Ring */}
-              <div className="relative shrink-0">
-                <div className="w-40 h-40 rounded-full p-1 bg-gradient-to-tr from-[#2E5BFF] to-[#B71BCF] shadow-2xl">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-[#0B0B0F] border-4 border-[#1A1A24]">
-                    <img 
-                      alt="Profile" 
-                      className="w-full h-full object-cover grayscale-[20%]" 
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-aAbU3k2muH2IvxwHNrFLnV6yqIDBfoT7la7qLMhN-5QnUTVsoLH2WpqXupBTQITFYCpAwoeDSCZfQsux6gWwJwlpQRhMEtc29P4TZ1L-YGlP7X45aiZJUvIcauu2xHVkyDn22sl1MbWYRHw2bw8bIgkhQoEpoFnfk0wDTKe82rHo7J_iTT2KQiTv_CSktBnyj4aFOn52It6HNLYOfwoMipeb8wScJKb5-hD34hqtj6pNM9TSRuErQAkh94OEZg3h2_Tyc_buORAO" 
-                    />
-                  </div>
+            {/* Identity Card */}
+            <div className="col-span-12 lg:col-span-8 bg-[var(--color-surface)] rounded-2xl p-8 shadow-outset flex flex-col md:flex-row gap-8 items-start relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-outset-hover">
+              <div className="absolute top-0 left-0 w-2 h-full bg-[var(--color-primary-container)]"></div>
+              
+              <div className="relative shrink-0 mx-auto md:mx-0">
+                <div className="w-32 h-32 rounded-full shadow-inset p-2 border-4 border-[var(--color-surface)] bg-[var(--color-surface-dim)]">
+                  <img 
+                    alt="Employee portrait" 
+                    className="w-full h-full rounded-full object-cover shadow-inner grayscale-[10%]" 
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIykD8PTYcxDgvvQT3-xzyhg9iuk7PRsWeqHVYo1RAvfcy3PQ-IujbJ9Hw4BKNdOOEn6jNxCYdxyaO0nFkcsEJIqVEBLiYzaIE3p7SN1ZYNDPlF1x9Bu0QOyFe4_7XzK5KG92sPqFgSf8IHv_RN44n9Q0A77RoUUv8XX8UUuZZhdg4EG75KgL9NZ5ewYQGErN5boiq0OGcKj3YhCWKaK2YKi-UH6ObCammwWqaLYPDjSul0BG8eCp6Ez1Dwe4AWk1JVn1fFyXtHoqa"
+                  />
                 </div>
-                <span className="absolute bottom-4 right-4 w-6 h-6 rounded-full bg-[#00ffcc] border-4 border-[#1A1A24] shadow-[0_0_15px_rgba(0,255,204,0.4)]"></span>
+                <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-[var(--color-surface)] shadow-outset flex items-center justify-center">
+                  <div className={`w-3 h-3 rounded-full shadow-[inset_1px_1px_2px_rgba(0,0,0,0.2)] ${profile.status === 'Active' ? 'bg-[#15803d]' : 'bg-[#ba1a1a]'}`}></div>
+                </div>
               </div>
-
-              <div className="flex-grow space-y-4 text-center md:text-left">
-                <div className="flex flex-col md:flex-row items-center gap-4">
-                  <h1 className="text-4xl font-black text-white tracking-tight">
+              
+              <div className="flex-1 flex flex-col justify-between h-full py-2 w-full text-center md:text-left">
+                <div>
+                  <h2 className="font-sans text-[32px] leading-tight font-bold text-[var(--color-on-surface)] mb-1">
                     {profile.firstName} {profile.lastName}
-                  </h1>
-                  <span className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-black uppercase tracking-[0.2em]">
-                    {profile.status}
-                  </span>
+                  </h2>
+                  <p className="font-sans text-xl text-[var(--color-primary-container)] font-medium mb-4">{profile.role}</p>
                   
-                  {can('EMP_EDIT') && (
-                    <button 
-                      onClick={() => setIsEditModalOpen(true)}
-                      className="ml-0 md:ml-auto flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all text-xs font-black uppercase tracking-widest"
-                    >
-                      <span className="material-symbols-outlined text-sm">edit</span>
-                      Edit Profile
-                    </button>
-                  )}
+                  <div className="flex flex-wrap gap-3 mb-6 justify-center md:justify-start">
+                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">domain</span>
+                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">{profile.dept}</span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">location_on</span>
+                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">{profile.location}</span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">badge</span>
+                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">EMP-{profile.empNo}</span>
+                    </div>
+                  </div>
                 </div>
                 
-                <p className="text-xl text-zinc-400 font-bold">{profile.role} — <span className="text-zinc-600">{profile.dept}</span></p>
-                
-                <div className="flex flex-wrap justify-center md:justify-start gap-6 pt-2">
-                  <div className="flex items-center gap-2 text-zinc-500 text-sm font-bold">
-                    <span className="material-symbols-outlined text-primary text-lg">mail</span>
-                    {profile.email}
+                <div className="flex flex-wrap md:flex-nowrap gap-6 border-t border-[var(--color-outline-variant)]/20 pt-5 mt-auto w-full justify-center md:justify-start">
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Direct Manager</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.manager}</p>
                   </div>
-                  <div className="flex items-center gap-2 text-zinc-500 text-sm font-bold">
-                    <span className="material-symbols-outlined text-primary text-lg">location_on</span>
-                    {profile.location}
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Hire Date</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.joined}</p>
                   </div>
-                  <div className="flex items-center gap-2 text-zinc-500 text-sm font-bold">
-                    <span className="material-symbols-outlined text-primary text-lg">calendar_month</span>
-                    Joined {profile.joined}
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Record Status</p>
+                    <p className={`font-sans text-sm font-semibold ${profile.status === 'Active' ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
+                      {profile.status}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
 
-          {/* Bento Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            {[
-              { label: "Employee No", val: profile.empNo, icon: "badge", sub: "System ID" },
-              { label: "Status", val: profile.status, icon: "verified", sub: "Current Record Status" },
-              { label: "Department", val: profile.dept, icon: "apartment", sub: "Assigned Department" }
-            ].map((stat, i) => (
-              <div key={i} className="bg-[#1A1A24] p-8 rounded-[2rem] border border-white/5">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{stat.label}</span>
-                  <span className="material-symbols-outlined text-primary">{stat.icon}</span>
-                </div>
-                <h4 className="text-3xl font-black text-white mb-1">{stat.val}</h4>
-                <p className="text-[11px] text-zinc-600 font-bold">{stat.sub}</p>
+            {/* Quick Contact / Status */}
+            <div className="col-span-12 lg:col-span-4 bg-[var(--color-surface)] rounded-2xl p-8 shadow-outset flex flex-col gap-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-outset-hover">
+              <div className="flex items-center justify-between border-b border-[var(--color-outline-variant)]/20 pb-4">
+                <h3 className="font-sans text-xl font-bold text-[var(--color-on-surface)]">Contact Info</h3>
+                {can('EMP_EDIT') && (
+                  <button 
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="p-2 rounded-full shadow-outset bg-[var(--color-surface)] hover:shadow-outset-hover hover:-translate-y-[1px] active:shadow-inset text-[var(--color-primary-container)] transition-all h-8 w-8 flex items-center justify-center cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                )}
               </div>
-            ))}
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center gap-4 group cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center justify-center text-[var(--color-primary-container)] group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-[18px]">mail</span>
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-0.5">Corporate Email</p>
+                    <p className="font-sans text-sm font-medium text-[var(--color-on-surface)] truncate">{profile.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 group cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center justify-center text-[var(--color-primary-container)] group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-[18px]">call</span>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-0.5">Mobile Phone</p>
+                    <p className="font-sans text-sm font-medium text-[var(--color-on-surface)]">{profile.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 group cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center justify-center text-[var(--color-primary-container)] group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-[18px]">desk</span>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-0.5">Office Location</p>
+                    <p className="font-sans text-sm font-medium text-[var(--color-on-surface)]">{profile.office}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* THE EMBEDDED PANEL */}
-          <JobHistoryPanel empNo={profile.empNo} userRole={userRole} />
+          {/* Lower Data Grid - Exclusively Job History for now since we removed unsupported sections */}
+          <div className="grid grid-cols-12 gap-6 pb-8">
+            <div className="col-span-12">
+              <JobHistoryPanel empNo={profile.empNo} />
+            </div>
+          </div>
         </>
       )}
 
-      {!loading && !profile && !error && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6">
-          <p className="text-yellow-400 font-bold">Employee not found. Please check the employee ID and try again.</p>
-        </div>
-      )}
-
-      {/* Edit Modal */}
       {profile && (
         <EditEmployeeModal 
           isOpen={isEditModalOpen} 

@@ -1,126 +1,250 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useRights } from '../context/UserRightsContext';
 import supabase from '../lib/supabaseClient';
 
+/**
+ * Layout
+ *
+ * Application shell: fixed sidebar (desktop), bottom nav (mobile),
+ * and a neumorphic logout confirmation dialog.
+ */
 export default function Layout() {
   const { can, rights } = useRights();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  // Task: Implement real logout logic
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
+    setLoggingOut(true);
     await supabase.auth.signOut();
     navigate('/login');
   };
 
-  // Define which permission each nav item needs
-  // If no 'right' is provided, it's public (like Dashboard)
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'grid_view' },
-    { name: 'Employees', path: '/employees', icon: 'badge'},
-    { name: 'History', path: '/jobhistory', icon: 'history'},
-    { name: 'Jobs', path: '/jobs', icon: 'work'},
-    { name: 'Units', path: '/departments', icon: 'domain'},
-    { name: 'Reports', path: '/reports', icon: 'analytics'},
-    { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER'},
+    { name: 'Employees', path: '/employees', icon: 'badge' },
+    { name: 'History', path: '/jobhistory', icon: 'history' },
+    { name: 'Jobs', path: '/jobs', icon: 'work' },
+    { name: 'Units', path: '/departments', icon: 'domain' },
+    { name: 'Reports', path: '/reports', icon: 'analytics' },
+    { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER' },
   ];
 
-  // Filter items based on user rights
-  const visibleNavItems = navItems.filter(item => !item.right || can(item.right));
+  const visibleNavItems = navItems.filter((item) => !item.right || can(item.right));
 
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-[#e2e2e2] relative font-body">
-      {/* Background Orbs */}
-      <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#2E5BFF]/10 blur-[120px] rounded-full z-0 pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-[#B71BCF]/5 blur-[150px] rounded-full z-0 pointer-events-none"></div>
-
-      {/* Top Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#16161E]/90 backdrop-blur-xl border-b border-white/5 flex justify-between items-center px-12 h-20">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2E5BFF] to-[#B71BCF] flex items-center justify-center shadow-lg">
-            <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>fluid</span>
-          </div>
-          <span className="text-2xl font-black bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent tracking-tighter">HopeHRS</span>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={handleLogout}
-            className="bg-white/5 border border-white/10 text-white px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:bg-white/10 transition-all"
+    <div className="min-h-screen bg-[var(--color-surface)] text-[var(--color-on-surface)] flex selection:bg-[var(--color-primary-container)]/20">
+      <aside className="sidebar-frame fixed left-0 top-0 hidden h-full w-[330px] lg:flex flex-col px-5 py-6 z-40">
+        <div className="surface-panel gradient-primary-soft sidebar-shell flex h-full flex-col rounded-[28px] px-4 py-5">
+          <button
+            type="button"
+            className="interactive-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-left"
+            onClick={() => navigate('/')}
           >
-            Logout
+            <div className="sidebar-brand-mark gradient-primary flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-outset-soft">
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                fluid
+              </span>
+            </div>
+            <div>
+              <div className="text-lg font-bold tracking-tight">HopeHRS</div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-[var(--color-on-surface-variant)]">
+                HR Management
+              </div>
+            </div>
           </button>
-          <div className="h-10 w-10 rounded-full border-2 border-[#2E5BFF] overflow-hidden hidden sm:block">
-             <img alt="User" src="https://ui-avatars.com/api/?name=User&background=2E5BFF&color=fff" className="w-full h-full object-cover"/>
+
+          <nav className="mt-6 flex flex-col gap-1.5 flex-1">
+            {visibleNavItems.map((item, index) => (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                className={({ isActive }) =>
+                  `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold animate-in fade-in slide-in-from-left-2 ${
+                    isActive
+                      ? 'gradient-primary text-white shadow-outset-soft'
+                      : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
+                  }`
+                }
+                style={{ animationDelay: `${index * 45}ms` }}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${
+                        isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
+                      }`}
+                    />
+                    <span
+                      className={`nav-item-icon material-symbols-outlined text-[20px] transition-transform duration-[var(--motion-fast)] ${
+                        isActive ? 'scale-110' : 'group-hover:scale-105'
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                    <span className="nav-item-label relative z-10">{item.name}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+
+            {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
+              <div className="mt-5 border-t border-[var(--color-outline-variant)]/55 pt-4">
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? 'gradient-primary text-white shadow-outset-soft'
+                        : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${
+                          isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
+                        }`}
+                      />
+                      <span className="nav-item-icon material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                      <span className="nav-item-label">Admin</span>
+                    </>
+                  )}
+                </NavLink>
+              </div>
+            )}
+          </nav>
+
+          <div className="mt-4 shrink-0 border-t border-[var(--color-outline-variant)]/55 pt-4">
+            <button
+              onClick={() => setShowLogoutDialog(true)}
+              className="nav-item-surface flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--color-on-surface-variant)] hover:bg-[var(--color-error-container)] hover:text-[var(--color-error)] cursor-pointer"
+            >
+              <span className="nav-item-icon material-symbols-outlined text-[20px] transition-transform duration-[var(--motion-fast)] group-hover:rotate-6">
+                logout
+              </span>
+              <span className="nav-item-label">Logout</span>
+            </button>
           </div>
         </div>
-      </nav>
+      </aside>
 
-      {/* Sidebar - Desktop */}
-      <aside className="fixed left-0 top-0 h-full w-72 hidden lg:flex flex-col pt-24 pb-8 px-4 bg-[#0F0F14]/95 backdrop-blur-3xl border-r border-white/5 z-40">
-        <div className="px-6 mb-8 mt-4">
-          <h2 className="text-[#2E5BFF] font-black text-xl">Dashboard</h2>
-          <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">HR Administration</p>
+      <main className="min-h-screen flex-1 px-4 pb-24 pt-4 lg:ml-[330px] lg:px-7 lg:pb-8 lg:pt-6">
+        <div className="mx-auto w-full max-w-[1280px]">
+          <div key={location.pathname} className="animate-in fade-in slide-in-from-bottom-4">
+            <Outlet />
+          </div>
         </div>
-        <nav className="flex flex-col gap-1 flex-grow">
-          {visibleNavItems.map((item) => (
+      </main>
+
+      <nav className="fixed bottom-3 left-3 right-3 z-[100] lg:hidden">
+        <div className="surface-panel flex h-16 items-center justify-around rounded-[22px] px-2">
+          {visibleNavItems.slice(0, 5).map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
-              className={({ isActive }) => `
-                flex items-center gap-4 px-6 py-3.5 rounded-full transition-all duration-200
-                ${isActive 
-                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20' 
-                  : 'text-zinc-500 hover:text-white hover:bg-white/5'}
-              `}
+              className={({ isActive }) =>
+                `nav-item-surface relative flex h-full min-w-0 flex-1 flex-col items-center justify-center rounded-2xl ${
+                  isActive
+                    ? 'gradient-primary text-white shadow-outset-soft'
+                    : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)]'
+                }`
+              }
             >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="text-sm font-black">{item.name}</span>
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`absolute top-1 h-1.5 w-8 rounded-full bg-[var(--color-primary-container)] transition-transform duration-[var(--motion-base)] ${
+                      isActive ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+                    }`}
+                  />
+                  <span className={`material-symbols-outlined text-[22px] transition-transform duration-[var(--motion-fast)] ${isActive ? '-translate-y-0.5' : ''}`}>
+                    {item.icon}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
-          {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) => `
-                flex items-center gap-4 px-6 py-3.5 rounded-full transition-all duration-200
-                ${isActive 
-                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20' 
-                  : 'text-zinc-500 hover:text-white hover:bg-white/5'}
-              `}
-            >
-              <span className="material-symbols-outlined">admin_panel_settings</span>
-              <span className="text-sm font-black">Admin</span>
-            </NavLink>
-          )}
-        </nav>
-      </aside>
-
-      {/* FIXED BOTTOM NAV: Mobile */}
-      <nav className="fixed bottom-0 left-0 w-full h-20 lg:hidden bg-[#16161E] border-t border-white/10 flex justify-around items-center z-[100]">
-        {visibleNavItems.map((item) => (
-          <NavLink 
-            key={item.name} 
-            to={item.path} 
-            className={({ isActive }) => `flex flex-col items-center gap-1 ${isActive ? 'text-[#8A3DFF]' : 'text-zinc-500'}`}
-          >
-            <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-            <span className="text-[9px] font-black uppercase">{item.name}</span>
-          </NavLink>
-        ))}
-        {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
-          <NavLink 
-            to="/admin" 
-            className={({ isActive }) => `flex flex-col items-center gap-1 ${isActive ? 'text-[#8A3DFF]' : 'text-zinc-500'}`}
-          >
-            <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
-            <span className="text-[9px] font-black uppercase">Admin</span>
-          </NavLink>
-        )}
+        </div>
       </nav>
 
-      {/* Main Content Area */}
-      <main className="lg:ml-72 pt-28 px-6 md:px-12 pb-32 lg:pb-12 min-h-screen relative z-10">
-        <Outlet />
-      </main>
+      {/* ── Logout Confirmation Dialog ── */}
+      {showLogoutDialog && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-6 overlay-scrim animate-in fade-in"
+          style={{ animationDuration: '200ms' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutDialog(false); }}
+        >
+          <div
+            className="modal-panel w-full max-w-sm rounded-[var(--radius-xl)] overflow-hidden animate-in zoom-in-95"
+            style={{ animationDuration: '240ms' }}
+          >
+            {/* Header */}
+            <div className="px-8 pt-8 pb-5 flex flex-col items-center text-center">
+              {/* Warning icon */}
+              <div className="w-16 h-16 rounded-2xl bg-[var(--color-error-container)] flex items-center justify-center mb-5 shadow-inset">
+                <span
+                  className="material-symbols-outlined text-[var(--color-error)] text-[30px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  logout
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-[var(--color-on-surface)] tracking-tight">
+                Sign Out?
+              </h2>
+              <p className="text-sm text-[var(--color-on-surface-variant)] mt-2 leading-relaxed">
+                Your session will be ended and you&apos;ll be returned to the login screen.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-8 pb-8 flex flex-col gap-3">
+              <button
+                onClick={confirmLogout}
+                disabled={loggingOut}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold text-sm
+                  bg-[var(--color-error)] text-[var(--color-on-error)]
+                  shadow-outset hover:-translate-y-[1px] hover:shadow-[0_16px_34px_rgba(186,26,26,0.22)]
+                  active:translate-y-0 active:shadow-inset-deep
+                  transition-all duration-[var(--motion-base)] ease-[var(--ease-standard)]
+                  disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {loggingOut ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
+                    </svg>
+                    Signing out…
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    Yes, Sign Out
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowLogoutDialog(false)}
+                disabled={loggingOut}
+                className="w-full rounded-2xl px-5 py-3 font-semibold text-sm
+                  bg-[var(--color-surface-bright)] text-[var(--color-on-surface)]
+                  border border-[var(--color-outline-variant)]/70
+                  shadow-outset-soft hover:-translate-y-[1px] hover:shadow-outset
+                  active:translate-y-0
+                  transition-all duration-[var(--motion-base)] ease-[var(--ease-standard)]
+                  disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

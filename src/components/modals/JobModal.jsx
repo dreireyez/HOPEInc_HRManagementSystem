@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { addJob, updateJob } from '../../services/jobService';
-
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 export default function JobModal({ isOpen, onClose, initialData = null, onSuccess }) {
   const [formData, setFormData] = useState({
     code: '',
@@ -11,7 +12,6 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Populate form when initialData changes
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -44,7 +44,6 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
     setLoading(true);
 
     try {
-      // Validate required fields
       if (!formData.code || !formData.desc) {
         setError('Job Code and Description are required');
         setLoading(false);
@@ -53,13 +52,11 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
 
       let result;
       if (initialData) {
-        // Update existing job
         result = await updateJob(initialData.jobcode || initialData.jobCode || initialData.code, {
           jobdesc: formData.desc,
           record_status: formData.record_status
         });
       } else {
-        // Create new job
         result = await addJob({
           jobcode: formData.code,
           jobdesc: formData.desc,
@@ -81,86 +78,70 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0B0B0F]/90 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-[#1A1A24] border border-white/5 relative w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col shadow-[0_40px_80px_rgba(0,0,0,0.6)] animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overlay-scrim animate-in fade-in duration-300">
+      <div className="modal-panel w-full max-w-lg overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-300">
         
-        {/* Decorative Neon Orbs */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#2E5BFF]/10 rounded-full blur-[80px] -z-10"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#B71BCF]/10 rounded-full blur-[80px] -z-10"></div>
-
-        {/* Modal Header */}
-        <div className="px-10 pt-10 pb-6 flex justify-between items-start">
+        <div className="px-8 pt-8 pb-6 border-b border-[var(--color-outline-variant)]/45 bg-[var(--color-surface-container-low)] flex justify-between items-start">
           <div>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-[#2E5BFF] font-black mb-1 block">Architecture Config</span>
-            <h2 className="text-3xl font-black text-white tracking-tight">
-              {initialData ? 'Edit Job Identity' : 'Create Job Identity'}
+            <span className="text-[10px] font-mono uppercase tracking-[0.24em] text-[var(--color-primary-container)] font-bold mb-1 block">Job Catalogue</span>
+            <h2 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">
+              {initialData ? 'Edit Job' : 'Create Job'}
             </h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={onClose} className="interactive-surface rounded-xl p-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]">
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="mx-8 mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-            <p className="text-red-400 text-sm font-bold">{error}</p>
+          <div className="mx-8 mt-6 p-4 rounded-2xl bg-[var(--color-error-container)] border border-[var(--color-error)]/20 shadow-inset">
+            <p className="text-[var(--color-on-error-container)] text-sm font-medium">{error}</p>
           </div>
         )}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="px-10 pb-10 space-y-8 overflow-y-auto max-h-[70vh]">
-          {/* Job Code */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">Job Code</label>
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">fingerprint</span>
-              <input 
-                className={`w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold ${initialData ? 'opacity-50 cursor-not-allowed' : ''}`}
-                placeholder="e.g. ENG-PLAT-001"
-                name="code"
-                value={formData.code}
-                onChange={handleInputChange}
-                readOnly={!!initialData}
-                required
-              />
-            </div>
-          </div>
+        <form id="job-form" onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
+          <Input 
+            label="Job Code"
+            name="code"
+            value={formData.code}
+            onChange={handleInputChange}
+            placeholder="e.g. ENG-PLAT-001"
+            icon="fingerprint"
+            readOnly={!!initialData}
+            required
+            className={initialData ? 'opacity-60 cursor-not-allowed' : ''}
+          />
 
-          {/* Job Description */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">Job Description</label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)] ml-1">Job Description</label>
             <textarea 
               rows="4"
-              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold resize-none" 
-              placeholder="Describe the essence of this role..."
+              className="field-shell w-full rounded-xl py-3 px-4 text-[var(--color-on-surface)] font-medium text-sm placeholder:text-[var(--color-outline)] focus:ring-2 focus:ring-[var(--color-primary-container)] transition-shadow outline-none resize-none" 
+              placeholder="Describe this role..."
               name="desc"
               value={formData.desc}
               onChange={handleInputChange}
               required
             />
           </div>
-
-
         </form>
 
-        {/* Modal Footer */}
-        <div className="px-10 py-8 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
-          <button 
+        <div className="px-8 py-6 bg-[var(--color-surface-bright)] border-t border-[var(--color-outline-variant)]/45 flex items-center justify-end gap-4 shadow-outset-top">
+          <Button 
             type="button"
+            variant="ghost"
             onClick={onClose}
-            className="text-zinc-500 font-black text-xs uppercase tracking-widest hover:text-white transition-all"
           >
-            Discard Changes
-          </button>
-          <button 
-            onClick={handleSubmit}
+            Cancel
+          </Button>
+          <Button 
+            type="submit"
+            form="job-form"
             disabled={loading}
-            className="px-10 py-4 rounded-full bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white font-black text-xs uppercase tracking-[0.15em] flex items-center gap-2 shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={loading}
           >
-            {loading ? 'Generating...' : 'Generate Identity'}
-            <span className="material-symbols-outlined text-sm">auto_awesome</span>
-          </button>
+            {initialData ? 'Save Changes' : 'Create Job'}
+          </Button>
         </div>
       </div>
     </div>

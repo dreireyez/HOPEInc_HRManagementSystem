@@ -1,142 +1,164 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabaseClient';
 
+/**
+ * LoginPage
+ *
+ * Google OAuth SSO-only entry point for HopeHRS.
+ * Email/password and self-registration are intentionally removed —
+ * all accounts are provisioned by a SUPERADMIN.
+ */
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  // Rubric Requirement: supabase.auth.signIn() wired to Login form
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setIsError(false);
-    setErrorMessage('');
-
-    try {
-      // 1. Attempt Sign In
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(), // Specialist Tip: Always trim emails
-        password: password,
-      });
-
-      // 2. Handle Supabase Errors
-      if (error) {
-        setErrorMessage(error.message);
-        setIsError(true);
-        return;
-      }
-
-      // 3. Success: Redirect to Dashboard
-      if (data?.user) {
-        console.log("Login successful for:", data.user.email);
-        navigate('/'); 
-      }
-    } catch (err) {
-      console.error("Unexpected Error:", err);
-      setErrorMessage("A system error occurred. Please try again.");
-      setIsError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState('');
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    setIsError(false);
-    setErrorMessage('');
-    
+    setError('');
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { 
-          redirectTo: window.location.origin + '/auth/callback' 
-        }
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
-      if (error) throw error;
+      if (oauthError) throw oauthError;
     } catch (err) {
-      console.error("Google Auth Error:", err.message);
-      setErrorMessage(err.message || "Failed to sign in with Google. Please try again.");
-      setIsError(true);
+      console.error('Google Auth Error:', err.message);
+      setError(err.message || 'Failed to sign in with Google. Please try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0F] flex items-center justify-center p-6 relative overflow-hidden font-sans">
-      {/* Dynamic Background Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
 
-      <div className="relative z-10 w-full max-w-[440px] bg-[#16161E]/80 backdrop-blur-xl border border-white/5 p-10 rounded-[2.5rem] shadow-2xl">
-        <div className="text-center mb-10">
-           <h1 className="text-4xl font-black bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent mb-2 tracking-tighter">
-            HopeHRS
-          </h1>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em]">Secure Access Portal</p>
-        </div>
+      {/* Background ambient gradients */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(circle at 20% 20%, rgba(17,58,91,0.13), transparent 36%),' +
+            'radial-gradient(circle at 80% 80%, rgba(10,41,66,0.09), transparent 30%)',
+        }}
+      />
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-5 text-white outline-none focus:ring-2 focus:ring-blue-500/40 transition-all placeholder:text-zinc-700 font-medium"
-              placeholder="name@hopeinc.edu"
-              required
-            />
-          </div>
+      {/* Decorative grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.025]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(17,58,91,1) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(17,58,91,1) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setIsError(false); }}
-              className={`w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-5 text-white outline-none transition-all placeholder:text-zinc-700 font-medium ${isError ? 'ring-2 ring-red-500/50' : 'focus:ring-2 focus:ring-blue-500/40'}`}
-              placeholder="••••••••"
-              required
-            />
-            {isError && (
-              <p className="text-[11px] text-red-400 font-bold ml-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">warning</span>
-                {errorMessage || "Invalid credentials"}
+      {/* Login card */}
+      <div
+        className="relative z-10 w-full max-w-[500px] animate-in fade-in slide-in-from-bottom-4"
+        style={{ animationDuration: '360ms' }}
+      >
+        <div className="surface-panel rounded-[var(--radius-xl)] p-12">
+
+          {/* Brand mark */}
+          <div className="flex flex-col items-center text-center mb-10">
+            <div
+              className="w-16 h-16 rounded-[22px] gradient-primary flex items-center justify-center shadow-outset mb-5"
+              aria-hidden="true"
+            >
+              <span
+                className="material-symbols-outlined text-white text-[30px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                fluid
+              </span>
+            </div>
+
+            <h1 className="text-[1.75rem] font-black tracking-tight text-[var(--color-on-surface)] leading-tight">
+              HopeHRS
+            </h1>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-[var(--color-on-surface-variant)] mt-1.5">
+              HR Management System
+            </p>
+
+            <div className="mt-5 px-4 py-2 rounded-full bg-[var(--color-primary-soft)] shadow-inset">
+              <p className="text-[11px] font-mono font-semibold text-[var(--color-primary-container)] tracking-wide">
+                Authorized Personnel Only
               </p>
-            )}
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black py-4 rounded-full shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all uppercase text-[11px] tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Verifying...' : 'Sign In'}
-          </button>
-        </form>
+          {/* Error state */}
+          {error && (
+            <div className="mb-6 rounded-2xl bg-[var(--color-error-container)] border border-[var(--color-error)]/18 p-4 shadow-inset animate-in fade-in">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-[var(--color-error)] text-[18px] mt-0.5 shrink-0">
+                  error
+                </span>
+                <p className="text-[var(--color-on-error-container)] text-sm font-medium leading-snug">
+                  {error}
+                </p>
+              </div>
+            </div>
+          )}
 
-        <div className="relative flex items-center py-8">
-          <div className="flex-grow border-t border-white/5"></div>
-          <span className="flex-shrink mx-4 text-[9px] font-black text-zinc-600 uppercase tracking-widest">or</span>
-          <div className="flex-grow border-t border-white/5"></div>
+          {/* Google SSO button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="interactive-surface w-full flex items-center justify-center gap-3 rounded-2xl px-5 py-3.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[var(--color-primary-container)] focus:outline-none transition-all duration-[var(--motion-base)]"
+            aria-label="Sign in with Google"
+          >
+            {loading ? (
+              <>
+                <svg
+                  className="h-4 w-4 animate-spin text-[var(--color-on-surface-variant)]"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
+                </svg>
+                <span className="text-sm font-semibold text-[var(--color-on-surface-variant)] tracking-wide">
+                  Redirecting…
+                </span>
+              </>
+            ) : (
+              <>
+                {/* Official Google "G" SVG from Simple Icons */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 shrink-0"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                    fill="#4285F4"
+                  />
+                </svg>
+                <span className="text-sm font-semibold text-[var(--color-on-surface)] tracking-wide">
+                  Continue with Google
+                </span>
+              </>
+            )}
+          </button>
+
+          {/* Footer note */}
+          <p className="text-center mt-7 text-[11px] text-[var(--color-on-surface-variant)] font-mono leading-relaxed">
+            Access is managed by your administrator.
+            <br />
+            Contact HR if you need an account.
+          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all border border-white/5 group"
-        >
-          <img alt="Google" className="w-4 h-4 group-hover:scale-110 transition-transform" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" />
-          <span className="text-[10px] uppercase tracking-widest">Continue with Google</span>
-        </button>
-        
-        <p className="text-center mt-10 text-zinc-600 text-xs font-bold uppercase tracking-tighter">
-          Need an account? <Link to="/register" className="text-blue-500 hover:text-blue-400 ml-1 underline decoration-blue-500/30 underline-offset-4">Register Now</Link>
+        {/* Below-card branding tag */}
+        <p className="text-center mt-5 text-[10px] font-mono text-[var(--color-outline)] uppercase tracking-[0.22em]">
+          Hope, Inc. · Internal Systems
         </p>
       </div>
     </div>

@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabaseClient';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -36,7 +39,6 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Rubric Requirement: supabase.auth.signUp() wired to Register form
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -64,125 +66,118 @@ export default function Register() {
       setMessage("Registration successful! Check your email for a verification link.");
       setLoading(false);
       setFormData({ firstName: '', lastName: '', username: '', email: '', password: '' });
-      // Optional: Delay navigation to let user read the message
       setTimeout(() => navigate('/login'), 3000);
     }
   };
 
   return (
-    <div className="bg-background text-on-background font-body min-h-screen flex items-center justify-center overflow-hidden neon-flux-bg">
-      <div className="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-primary-container/20 blur-[120px] rounded-full z-0 pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-tertiary-container/10 blur-[150px] rounded-full z-0 pointer-events-none"></div>
-
-      <main className="relative z-10 w-full max-w-xl px-6 py-12">
-        <div className="bg-[#1E1E2E]/60 backdrop-blur-3xl rounded-xl p-8 md:p-12 shadow-2xl ring-1 ring-on-surface/5">
-          <div className="flex flex-col items-center mb-8">
-            <div className="mb-4 flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-container to-tertiary-container shadow-lg">
-              <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>fluid</span>
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] bg-clip-text text-transparent">HopeHRS</h1>
-            <p className="text-on-surface-variant text-sm mt-2 font-medium tracking-wide uppercase">Human Resources Evolution</p>
+    <div className="min-h-screen bg-[var(--color-surface)] flex items-center justify-center p-6 relative font-sans overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_left,rgba(0,102,102,0.1),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(0,76,76,0.08),transparent_22%)]" />
+      <Card className="relative z-10 w-full max-w-[500px]" padding="lg">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--color-primary-container)] flex items-center justify-center shadow-outset-soft mb-4">
+            <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>fluid</span>
           </div>
-
-          {message && (
-            <div className="mb-8 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3 animate-pulse">
-              <span className="material-symbols-outlined text-emerald-500 text-xl">check_circle</span>
-              <p className="text-xs text-emerald-200 leading-relaxed font-medium">{message}</p>
-            </div>
-          )}
-
-          {errors.auth && (
-             <div className="mb-4 p-3 rounded bg-error/10 border border-error/20 text-error text-xs font-bold text-center">
-                {errors.auth}
-             </div>
-          )}
-
-          <form className="space-y-5" onSubmit={handleRegister} noValidate>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">First Name</label>
-                <div className="relative group">
-                  <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.firstName ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>person</span>
-                  <input
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.firstName ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
-                    placeholder="Jane"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Last Name</label>
-                <div className="relative group">
-                  <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.lastName ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>badge</span>
-                  <input
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.lastName ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
-                    placeholder="Doe"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Email Address</label>
-              <div className="relative group">
-                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.email ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>alternate_email</span>
-                <input
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.email ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
-                  placeholder="jane.doe@hopehrs.com"
-                  type="email"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Security Password</label>
-              <div className="relative group">
-                <span className={`absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl transition-colors ${errors.password ? 'text-error' : 'text-outline group-focus-within:text-primary-container'}`}>lock</span>
-                <input
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className={`w-full bg-surface-container-highest border-none rounded-lg py-4 pl-12 pr-12 text-on-surface placeholder:text-outline focus:ring-2 transition-all duration-300 ${errors.password ? 'ring-2 ring-error/50' : 'focus:ring-primary-container/50'}`}
-                  placeholder="••••••••••••"
-                  type={showPassword ? "text" : "password"}
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline hover:text-on-surface transition-colors">
-                  {showPassword ? "visibility" : "visibility_off"}
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-primary-container to-tertiary-container text-white font-bold py-4 rounded-full shadow-lg shadow-primary-container/20 hover:opacity-90 active:scale-[0.98] transition-all duration-200 uppercase tracking-widest text-sm flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                <span>{loading ? 'Processing...' : 'Register Account'}</span>
-                {!loading && <span className="material-symbols-outlined text-lg">arrow_forward</span>}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-8 text-center">
-            <p className="text-on-surface-variant text-sm">
-              Already have an account? <Link to="/login" className="text-primary-container font-bold hover:text-tertiary transition-colors ml-1">Login</Link>
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-[var(--color-on-surface)] mb-2 tracking-tight">
+            HopeHRS
+          </h1>
+          <p className="text-[var(--color-on-surface-variant)] text-xs font-mono uppercase tracking-[0.22em] font-semibold">Account Creation</p>
         </div>
-      </main>
+
+        {message && (
+          <div className="mb-6 p-4 rounded-md shadow-inset bg-[var(--color-success-bg)] text-[var(--color-success-text)] flex items-center gap-3">
+            <span className="material-symbols-outlined">check_circle</span>
+            <p className="text-sm font-medium">{message}</p>
+          </div>
+        )}
+
+        {errors.auth && (
+          <div className="mb-6 p-4 rounded-md shadow-inset bg-[var(--color-error-container)] text-[var(--color-on-error-container)] flex items-center gap-3">
+            <span className="material-symbols-outlined">error</span>
+            <p className="text-sm font-medium">{errors.auth}</p>
+          </div>
+        )}
+
+        <form className="space-y-5" onSubmit={handleRegister} noValidate>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Input
+              label="FIRST NAME"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Jane"
+              error={errors.firstName}
+            />
+            <Input
+              label="LAST NAME"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="Doe"
+              error={errors.lastName}
+            />
+          </div>
+
+          <Input
+            label="USERNAME"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            disabled={loading}
+            placeholder="janedoe"
+            error={errors.username}
+          />
+
+          <Input
+            label="EMAIL ADDRESS"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            disabled={loading}
+            placeholder="jane@hopeinc.edu"
+            error={errors.email}
+          />
+
+          <div className="relative">
+            <Input
+              label="PASSWORD"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={handleChange}
+              disabled={loading}
+              placeholder="••••••••••••"
+              error={errors.password}
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowPassword(!showPassword)} 
+              className="absolute right-3 top-[37px] text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors cursor-pointer rounded-lg p-1"
+            >
+              <span className="material-symbols-outlined text-sm">{showPassword ? "visibility" : "visibility_off"}</span>
+            </button>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full py-3 mt-2 text-sm tracking-wide uppercase flex items-center justify-center gap-2"
+            disabled={loading}
+          >
+            {loading ? 'Processing...' : 'Register Account'}
+            {!loading && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
+          </Button>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-[var(--color-on-surface-variant)] text-sm font-sans font-medium">
+            Already have an account? <Link to="/login" className="text-[var(--color-primary-container)] hover:underline underline-offset-4 ml-1">Login</Link>
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }

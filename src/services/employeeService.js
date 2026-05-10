@@ -10,25 +10,45 @@ import supabase from '../lib/supabaseClient.js';
  */
 export const getEmployees = async (userType) => {
   try {
-    let query = supabase.from('employee').select('*');
+    // Query 1: employee table (record_status, stamp, all HR fields)
+    let empQuery = supabase
+      .from('employee')
+      .select('empno, lastname, firstname, gender, hiredate, sepdate, record_status, stamp');
 
-    // Apply filter for regular users - only show ACTIVE records
     if (userType === 'USER') {
-      query = query.eq('record_status', 'ACTIVE');
-    }
-    // ADMIN and SUPERADMIN see all records (no filter applied)
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw error;
+      empQuery = empQuery.eq('record_status', 'ACTIVE');
     }
 
-    return { data, error: null };
+    // Query 2: employee_current_job view (jobdesc, deptname keyed by empno)
+    // Views cannot be joined via PostgREST FK syntax — must query separately
+    const [empRes, viewRes] = await Promise.all([
+      empQuery,
+      supabase.from('employee_current_job').select('empno, jobdesc, deptname'),
+    ]);
+
+    if (empRes.error) throw empRes.error;
+
+    // Build a lookup map from the view: empno → { jobdesc, deptname }
+    const jobMap = {};
+    if (!viewRes.error && viewRes.data) {
+      for (const row of viewRes.data) {
+        jobMap[row.empno] = { jobdesc: row.jobdesc, deptname: row.deptname };
+      }
+    }
+
+    // Merge view data into each employee row
+    const merged = (empRes.data || []).map((emp) => ({
+      ...emp,
+      jobdesc: jobMap[emp.empno]?.jobdesc ?? null,
+      deptname: jobMap[emp.empno]?.deptname ?? null,
+    }));
+
+    return { data: merged, error: null };
   } catch (err) {
     return { data: null, error: err };
   }
 };
+
 
 /**
  * Fetches a single employee by employee number.

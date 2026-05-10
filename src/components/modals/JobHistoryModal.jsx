@@ -2,21 +2,8 @@ import { useState, useEffect } from 'react';
 import { addJobHistory, updateJobHistory } from '../../services/jobHistoryService';
 import { getJobs } from '../../services/jobService';
 import { getDepts } from '../../services/departmentService';
-
-/**
- * JobHistoryModal — Create/Edit Job History Records
- * 
- * BUG-007 FIX: Complete rewrite. Previously was a static shell with
- * no form state, no service integration, and hardcoded dropdown options.
- * Now fully functional with dynamic data loading and service layer calls.
- * 
- * @param {Object} props
- * @param {boolean} props.isOpen - Whether modal is visible
- * @param {function} props.onClose - Close callback
- * @param {string|number} props.empNo - Employee number to associate record with
- * @param {Object} [props.initialData] - Pre-populate for edit mode
- * @param {function} [props.onSuccess] - Callback after successful save
- */
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = null, onSuccess }) {
   const [formData, setFormData] = useState({
     jobCode: '',
@@ -31,14 +18,12 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load dropdown options when modal opens
   useEffect(() => {
     if (isOpen) {
       loadOptions();
     }
   }, [isOpen]);
 
-  // Pre-populate form for edit mode
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -117,158 +102,134 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0B0B0F]/90 backdrop-blur-sm animate-in fade-in duration-300">
-      {/* Modal Container */}
-      <div className="bg-[#1A1A24] border border-white/5 relative w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col shadow-[0_40px_80px_rgba(0,0,0,0.6)] animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overlay-scrim animate-in fade-in duration-300">
+      <div className="modal-panel w-full max-w-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-300">
         
-        {/* Neon Glow Accents */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#2E5BFF]/10 rounded-full blur-[80px] -z-10"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#B71BCF]/10 rounded-full blur-[80px] -z-10"></div>
-
-        {/* Modal Header */}
-        <div className="px-10 pt-10 pb-6 flex justify-between items-start">
+        <div className="px-8 pt-8 pb-6 border-b border-[var(--color-outline-variant)]/45 bg-[var(--color-surface-container-low)] flex justify-between items-start">
           <div>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-[#B71BCF] font-black mb-1 block">Career Tracking</span>
-            <h2 className="text-3xl font-black text-white tracking-tight">
+            <span className="text-[10px] font-mono uppercase tracking-[0.24em] text-[var(--color-primary-container)] font-bold mb-1 block">Career Tracking</span>
+            <h2 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">
               {initialData ? 'Edit Job History' : 'Add Job History'}
             </h2>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-white/5 transition-colors text-zinc-500 hover:text-white"
+            className="interactive-surface rounded-xl p-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="mx-8 mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-            <p className="text-red-400 text-sm font-bold">{error}</p>
+          <div className="mx-8 mt-6 p-4 rounded-2xl bg-[var(--color-error-container)] border border-[var(--color-error)]/20 shadow-inset">
+            <p className="text-[var(--color-on-error-container)] text-sm font-medium">{error}</p>
           </div>
         )}
 
-        {/* Form Content */}
-        <form onSubmit={handleSubmit} className="px-10 pb-10 space-y-8 overflow-y-auto max-h-[70vh]">
+        <form id="job-history-form" onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Job Title Dropdown */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Job Title</label>
+              <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)] ml-1">Job Title</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">work</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--color-outline)] text-[20px] group-focus-within:text-[var(--color-primary-container)] transition-colors">work</span>
                 <select 
                   name="jobCode"
                   value={formData.jobCode}
                   onChange={handleInputChange}
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-10 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none font-bold"
+                  className="field-shell w-full rounded-xl py-2.5 pl-10 pr-10 text-[var(--color-on-surface)] font-medium text-sm focus:ring-2 focus:ring-[var(--color-primary-container)] transition-shadow outline-none appearance-none"
                   required
                 >
-                  <option value="" className="bg-[#1A1A24]">Select a job...</option>
+                  <option value="">Select a job...</option>
                   {loadingOptions ? (
-                    <option disabled className="bg-[#1A1A24]">Loading...</option>
+                    <option disabled>Loading...</option>
                   ) : (
                     jobs.map(job => (
-                      <option key={job.jobCode} value={job.jobCode} className="bg-[#1A1A24]">
+                      <option key={job.jobCode} value={job.jobCode}>
                         {job.jobDesc} ({job.jobCode})
                       </option>
                     ))
                   )}
                 </select>
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-zinc-600 pointer-events-none">expand_more</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--color-outline-variant)] text-[20px] pointer-events-none">expand_more</span>
               </div>
             </div>
 
-            {/* Department Dropdown */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Department</label>
+              <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)] ml-1">Department</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">corporate_fare</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--color-outline)] text-[20px] group-focus-within:text-[var(--color-primary-container)] transition-colors">corporate_fare</span>
                 <select 
                   name="deptCode"
                   value={formData.deptCode}
                   onChange={handleInputChange}
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-10 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none font-bold"
+                  className="field-shell w-full rounded-xl py-2.5 pl-10 pr-10 text-[var(--color-on-surface)] font-medium text-sm focus:ring-2 focus:ring-[var(--color-primary-container)] transition-shadow outline-none appearance-none"
                   required
                 >
-                  <option value="" className="bg-[#1A1A24]">Select a department...</option>
+                  <option value="">Select a department...</option>
                   {loadingOptions ? (
-                    <option disabled className="bg-[#1A1A24]">Loading...</option>
+                    <option disabled>Loading...</option>
                   ) : (
                     depts.map(dept => (
-                      <option key={dept.deptCode} value={dept.deptCode} className="bg-[#1A1A24]">
+                      <option key={dept.deptCode} value={dept.deptCode}>
                         {dept.deptName} ({dept.deptCode})
                       </option>
                     ))
                   )}
                 </select>
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-zinc-600 pointer-events-none">expand_more</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--color-outline-variant)] text-[20px] pointer-events-none">expand_more</span>
               </div>
             </div>
 
-            {/* Effective Date */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Effective Date</label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">calendar_today</span>
-                <input 
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none [color-scheme:dark] font-bold" 
-                  type="date"
-                  name="effDate"
-                  value={formData.effDate}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
+            <Input 
+              label="Effective Date"
+              name="effDate"
+              type="date"
+              value={formData.effDate}
+              onChange={handleInputChange}
+              icon="calendar_today"
+              required
+            />
 
-            {/* Salary Input */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Annual Salary</label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">payments</span>
-                <input 
-                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-16 text-white placeholder:text-zinc-700 focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold" 
-                  placeholder="0.00" 
-                  type="number"
-                  step="0.01"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleInputChange}
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-black">USD</span>
-              </div>
-            </div>
+            <Input 
+              label="Annual Salary"
+              name="salary"
+              type="number"
+              step="0.01"
+              value={formData.salary}
+              onChange={handleInputChange}
+              placeholder="0.00"
+              icon="payments"
+            />
           </div>
 
-          {/* Info Alert Panel */}
-          <div className="bg-[#2E5BFF]/5 p-6 rounded-3xl border border-[#2E5BFF]/10 flex gap-4 items-start">
-            <span className="material-symbols-outlined text-primary">info</span>
+          <div className="bg-[var(--color-primary-soft)] p-5 rounded-2xl border border-[var(--color-primary-container)]/12 flex gap-4 items-start">
+            <span className="material-symbols-outlined text-[var(--color-primary-container)]">info</span>
             <div className="space-y-1">
-              <p className="text-sm font-black text-white uppercase tracking-tight">System Notice</p>
-              <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                Changes to career history will trigger an audit log. Ensure the effective date aligns with the start of the next payroll cycle to prevent processing delays.
+              <p className="text-sm font-bold text-[var(--color-on-surface)]">Update Guidance</p>
+              <p className="text-sm text-[var(--color-on-surface-variant)] leading-relaxed">
+                Review the effective date and assignment details before saving so the employee timeline stays accurate and easy to audit.
               </p>
             </div>
           </div>
         </form>
 
-        {/* Modal Footer */}
-        <div className="px-10 py-8 bg-white/[0.02] border-t border-white/5 flex items-center justify-end gap-4">
-          <button 
-            onClick={onClose}
+        <div className="px-8 py-6 bg-[var(--color-surface-bright)] border-t border-[var(--color-outline-variant)]/45 flex items-center justify-end gap-4 shadow-outset-top">
+          <Button 
             type="button"
-            className="px-8 py-3 rounded-full text-zinc-500 font-bold text-sm hover:text-white transition-all"
+            variant="ghost"
+            onClick={onClose}
           >
             Cancel
-          </button>
-          <button 
-            onClick={handleSubmit}
+          </Button>
+          <Button 
+            type="submit"
+            form="job-history-form"
             disabled={loading}
-            className="px-10 py-3 rounded-full bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white font-black text-sm shadow-xl shadow-[#8A3DFF]/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={loading}
           >
-            {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Add Record')}
-          </button>
+            {initialData ? 'Save Changes' : 'Add Record'}
+          </Button>
         </div>
       </div>
     </div>
