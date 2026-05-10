@@ -16,10 +16,10 @@ export default function DeptListPage() {
   const fetchDepts = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const { data, error: fetchError } = await getDepts(currentUser?.user_type || 'USER');
-      
+
       if (fetchError) {
         setError(fetchError.message);
       } else {
@@ -70,9 +70,9 @@ export default function DeptListPage() {
           <h1 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">Departments</h1>
           <p className="text-sm text-[var(--color-on-surface-variant)] mt-1">Operational Business Units</p>
         </div>
-        
+
         {can('DEPT_ADD') && (
-          <Button 
+          <Button
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-4 py-2"
           >
@@ -124,7 +124,7 @@ export default function DeptListPage() {
                   style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.18) 0%, transparent 50%, rgba(17,58,91,0.06) 100%)' }}
                 />
 
-                  {/* Top row: icon + action buttons */}
+                {/* Top row: icon + action buttons */}
                 <div className="flex justify-between items-start mb-4 relative z-10">
                   <div className="w-11 h-11 rounded-xl bg-[var(--color-surface-dim)] flex items-center justify-center
                     text-[var(--color-primary-container)] shadow-inset
