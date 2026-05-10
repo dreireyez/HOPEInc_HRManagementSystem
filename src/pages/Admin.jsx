@@ -134,12 +134,23 @@ function RoleSelector({ currentRole, onSelect, disabled }) {
 }
 
 /* ─── user row card ─── */
-function UserCard({ user, isSuperadminActor, onActivate, onDeactivate, onRoleChange, busyId }) {
+function UserCard({ user, actorUserId, actorRole, isSuperadminActor, onActivate, onDeactivate, onRoleChange, busyId }) {
   const initials = user.username ? user.username.substring(0, 2).toUpperCase() : 'U';
   const isBusy = busyId === user.userid;
   const isPending = user.record_status !== 'ACTIVE';
   const isSuperadmin = user.user_type === 'SUPERADMIN';
   const canChangeRole = isSuperadminActor && !isSuperadmin && !isPending;
+  const isSelf = actorUserId === user.userid;
+  const isAdminActor = actorRole === 'ADMIN';
+  const isAdminTarget = user.user_type === 'ADMIN';
+  const canManageStatus = isSuperadminActor || (isAdminActor && user.user_type === 'USER');
+  const statusRestrictionLabel = isSuperadmin
+    ? 'Protected'
+    : isSelf
+      ? 'Self account'
+      : isAdminTarget
+        ? 'ADMIN account'
+        : null;
 
   return (
     <div className={`group flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl p-4 transition-all duration-[var(--motion-base)] ease-[var(--ease-standard)] border
@@ -195,30 +206,52 @@ function UserCard({ user, isSuperadminActor, onActivate, onDeactivate, onRoleCha
         ) : (
           <>
             {/* Activate / Deactivate toggle */}
-            {isPending ? (
-              <Button
-                onClick={() => onActivate(user.userid)}
-                variant="primary"
-                size="sm"
-                loading={isBusy}
-                disabled={isBusy}
-                className="min-w-[110px]"
-              >
-                <span className="material-symbols-outlined text-base">person_add</span>
-                Activate
-              </Button>
+            {canManageStatus ? (
+              isPending ? (
+                <Button
+                  onClick={() => onActivate(user.userid)}
+                  variant="primary"
+                  size="sm"
+                  loading={isBusy}
+                  disabled={isBusy}
+                  className="min-w-[110px]"
+                >
+                  <span className="material-symbols-outlined text-base">person_add</span>
+                  Activate
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => onDeactivate(user.userid)}
+                  variant="danger"
+                  size="sm"
+                  loading={isBusy}
+                  disabled={isBusy}
+                  className="min-w-[110px]"
+                >
+                  <span className="material-symbols-outlined text-base">person_off</span>
+                  Deactivate
+                </Button>
+              )
             ) : (
-              <Button
-                onClick={() => onDeactivate(user.userid)}
-                variant="danger"
-                size="sm"
-                loading={isBusy}
-                disabled={isBusy}
-                className="min-w-[110px]"
-              >
-                <span className="material-symbols-outlined text-base">person_off</span>
-                Deactivate
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={isPending ? 'primary' : 'danger'}
+                  size="sm"
+                  disabled
+                  className="min-w-[110px]"
+                >
+                  <span className="material-symbols-outlined text-base">{isPending ? 'person_add' : 'person_off'}</span>
+                  {isPending ? 'Activate' : 'Deactivate'}
+                </Button>
+                {statusRestrictionLabel && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--color-surface-container)] text-[var(--color-on-surface-variant)] text-[10px] font-mono uppercase tracking-[0.2em] font-bold shadow-inset">
+                    <span className="material-symbols-outlined text-[14px]">
+                      {isSelf ? 'person' : isAdminTarget ? 'admin_panel_settings' : 'lock'}
+                    </span>
+                    {statusRestrictionLabel}
+                  </span>
+                )}
+              </div>
             )}
 
             {/* Role change dropdown (SUPERADMIN only, active users only) */}
@@ -274,6 +307,8 @@ export default function Admin() {
   const toast = useToast();
 
   const isSuperadminActor = currentUser?.user_type === 'SUPERADMIN';
+  const actorUserId = currentUser?.userid;
+  const actorRole = currentUser?.user_type;
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -437,6 +472,8 @@ export default function Admin() {
               <div key={user.userid} className={`animate-in fade-in slide-in-from-bottom-4 stagger-${Math.min(idx + 1, 5)}`}>
                 <UserCard
                   user={user}
+                  actorUserId={actorUserId}
+                  actorRole={actorRole}
                   isSuperadminActor={isSuperadminActor}
                   onActivate={handleActivate}
                   onDeactivate={handleDeactivate}
