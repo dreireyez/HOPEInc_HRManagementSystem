@@ -31,7 +31,6 @@ export default function Dashboard() {
           departments: (deptRes.data || []).filter((d) => d.record_status === 'ACTIVE').length,
         });
 
-        // Restored to 4 since the bottom button removal freed up enough space
         const sorted = [...employees]
           .filter((e) => e.hiredate)
           .sort((a, b) => new Date(b.hiredate) - new Date(a.hiredate))
@@ -147,7 +146,7 @@ export default function Dashboard() {
                             {emp.firstname} {emp.lastname}
                           </h4>
                           <p className="text-sm text-[var(--color-on-surface-variant)]/88 truncate">
-                            {emp.job_title || 'No title'} • {emp.dept || 'Unassigned'}
+                            {emp.jobdesc || 'No title'} - {emp.deptname || 'Unassigned'}
                           </p>
                         </div>
                         <span className="rounded-full bg-[var(--color-surface-container)] px-3 py-1.5 text-[10px] font-mono font-medium text-[var(--color-on-surface-variant)] uppercase tracking-[0.24em] shadow-inset shrink-0">

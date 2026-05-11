@@ -10,11 +10,15 @@ import {
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { ToastContainer } from '../components/ui/Toast';
+import { useToast } from '../components/ui/useToast';
 
 const PAGE_SIZE = 10;
 
 export default function JobListPage() {
   const { can, currentUser } = useRights();
+  const toast = useToast();
   const canSeeAdminMetadata =
     currentUser?.user_type &&
     currentUser.user_type !== 'USER';
@@ -51,6 +55,9 @@ export default function JobListPage() {
 
   const [openMenuId, setOpenMenuId] =
     useState(null);
+
+  const [deleteTarget, setDeleteTarget] = useState(null); // { code, desc }
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -89,26 +96,22 @@ export default function JobListPage() {
     fetchJobs();
   };
 
-  const handleSoftDelete = async (
-    jobCode
-  ) => {
-    if (
-      !window.confirm(
-        `Deactivate job "${jobCode}"?`
-      )
-    )
-      return;
+  const handleSoftDelete = (jobCode, jobDesc) => {
+    setDeleteTarget({ code: jobCode, desc: jobDesc });
+  };
 
-    const { error: delErr } =
-      await softDeleteJob(jobCode);
-
+  const confirmSoftDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const { error: delErr } = await softDeleteJob(deleteTarget.code);
+    setDeleteLoading(false);
     if (delErr) {
-      alert(
-        `Failed to deactivate: ${delErr.message}`
-      );
+      toast.push(`Failed to deactivate: ${delErr.message}`, 'error');
     } else {
+      toast.push(`Job "${deleteTarget.code}" has been deactivated.`);
       fetchJobs();
     }
+    setDeleteTarget(null);
   };
 
   const toggleSort = (field) => {
@@ -735,6 +738,37 @@ export default function JobListPage() {
         onClose={handleCloseModal}
         initialData={editingJob}
       />
+
+      {/* Deactivation confirmation dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        icon="work_off"
+        title="Deactivate Job?"
+        description={
+          deleteTarget ? (
+            <>
+              You are about to deactivate job{' '}
+              <strong className="text-[var(--color-on-surface)] font-mono">
+                {deleteTarget.code}
+              </strong>
+              {deleteTarget.desc ? (
+                <> — {deleteTarget.desc}</>
+              ) : null}.
+              <br /><br />
+              This will set its status to{' '}
+              <strong className="text-[var(--color-error)]">INACTIVE</strong> and
+              hide it from standard views. It can be recovered from the Deleted Items page.
+            </>
+          ) : null
+        }
+        confirmLabel="Deactivate Job"
+        confirmVariant="danger"
+        onCancel={() => { if (!deleteLoading) setDeleteTarget(null); }}
+        onConfirm={confirmSoftDelete}
+        loading={deleteLoading}
+      />
+
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismiss} />
     </div>
   );
 }

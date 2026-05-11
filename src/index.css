@@ -524,3 +524,44 @@
     will-change: auto;
   }
 }
+
+/* ─── Modal overlay + panel ─── */
+.overlay-scrim {
+  background-color: rgba(12, 31, 56, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.modal-panel {
+  background: var(--color-surface-bright, #ffffff);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 32px 80px rgba(12, 31, 56, 0.22),
+    0 8px 24px rgba(12, 31, 56, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ─── animate-in utilities (subset of tailwindcss-animate) ─── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes zoomIn95 {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideInFromBottom4 {
+  from { opacity: 0; transform: translateY(1rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+}
+
+.fade-in            { animation-name: fadeIn; }
+.zoom-in-95         { animation-name: zoomIn95; }
+.slide-in-from-bottom-4 { animation-name: slideInFromBottom4; }
+

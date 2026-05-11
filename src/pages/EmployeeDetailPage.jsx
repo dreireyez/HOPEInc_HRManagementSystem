@@ -50,8 +50,8 @@ export default function EmployeeDetailPage() {
     location: employee.location || 'Not specified',
     office: employee.office || 'Unassigned Desk', // Mock if not in DB
     joined: employee.hiredate ? new Date(employee.hiredate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified',
-    role: employee.job_title || 'Not assigned',
-    dept: employee.dept || 'Not assigned',
+    role: employee.jobdesc || 'Not assigned',
+    dept: employee.deptname || 'Not assigned',
     manager: employee.manager || 'Unassigned', // Mock if not in DB
     status: employee.record_status === 'ACTIVE' ? 'Active' : 'Inactive',
     empNo: employee.empno

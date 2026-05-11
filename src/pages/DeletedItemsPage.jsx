@@ -22,6 +22,15 @@ export default function DeletedItemsPage() {
 
   const tabs = ['Employees', 'Job History', 'Jobs', 'Departments'];
 
+  const pick = (item, ...keys) => {
+    for (const key of keys) {
+      if (item?.[key] !== undefined && item?.[key] !== null && item?.[key] !== '') {
+        return item[key];
+      }
+    }
+    return '';
+  };
+
   const fetchInactiveItems = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -66,11 +75,27 @@ export default function DeletedItemsPage() {
   }, [totalPages]);
 
   const handleRecover = async (item) => {
+    let result;
+
     try {
-      if (activeTab === 'Employees') await recoverEmployee(item.empno);
-      else if (activeTab === 'Jobs') await recoverJob(item.jobCode);
-      else if (activeTab === 'Departments') await recoverDept(item.deptCode);
-      else if (activeTab === 'Job History') await recoverJobHistory(item.id);
+      if (activeTab === 'Employees') {
+        result = await recoverEmployee(pick(item, 'empno', 'empNo', 'emp_no'));
+      } else if (activeTab === 'Jobs') {
+        result = await recoverJob(pick(item, 'jobcode', 'jobCode', 'job_code'));
+      } else if (activeTab === 'Departments') {
+        result = await recoverDept(pick(item, 'deptcode', 'deptCode', 'dept_code'));
+      } else if (activeTab === 'Job History') {
+        result = await recoverJobHistory({
+          empno: pick(item, 'empno', 'empNo', 'emp_no'),
+          jobcode: pick(item, 'jobcode', 'jobCode', 'job_code'),
+          effdate: pick(item, 'effdate', 'effDate', 'eff_date'),
+        });
+      }
+
+      if (result?.error) {
+        throw result.error;
+      }
+
       fetchInactiveItems();
     } catch (err) {
       alert(`Recovery failed: ${err.message}`);
@@ -78,18 +103,24 @@ export default function DeletedItemsPage() {
   };
 
   const getItemLabel = (item) => {
-    if (activeTab === 'Employees') return `${item.firstname || ''} ${item.lastname || ''}`.trim() || item.empno;
-    if (activeTab === 'Jobs') return item.jobDesc || item.jobCode;
-    if (activeTab === 'Departments') return item.deptName || item.deptCode;
-    if (activeTab === 'Job History') return `Emp #${item.emp_no} - ${item.jobCode || 'N/A'}`;
+    if (activeTab === 'Employees') return `${item.firstname || ''} ${item.lastname || ''}`.trim() || pick(item, 'empno', 'empNo', 'emp_no');
+    if (activeTab === 'Jobs') return pick(item, 'jobdesc', 'jobDesc', 'job_code', 'jobCode', 'jobcode');
+    if (activeTab === 'Departments') return pick(item, 'deptname', 'deptName', 'dept_code', 'deptCode', 'deptcode');
+    if (activeTab === 'Job History') return `Emp #${pick(item, 'empno', 'empNo', 'emp_no')} - ${pick(item, 'jobcode', 'jobCode', 'job_code') || 'N/A'}`;
     return 'Unknown';
   };
 
   const getItemCode = (item) => {
-    if (activeTab === 'Employees') return `#${item.empno}`;
-    if (activeTab === 'Jobs') return item.jobCode;
-    if (activeTab === 'Departments') return item.deptCode;
-    if (activeTab === 'Job History') return `ID: ${item.id}`;
+    if (activeTab === 'Employees') return `#${pick(item, 'empno', 'empNo', 'emp_no')}`;
+    if (activeTab === 'Jobs') return pick(item, 'jobcode', 'jobCode', 'job_code');
+    if (activeTab === 'Departments') return pick(item, 'deptcode', 'deptCode', 'dept_code');
+    if (activeTab === 'Job History') {
+      return [
+        `#${pick(item, 'empno', 'empNo', 'emp_no')}`,
+        pick(item, 'jobcode', 'jobCode', 'job_code'),
+        pick(item, 'effdate', 'effDate', 'eff_date'),
+      ].filter(Boolean).join(' / ');
+    }
     return '';
   };
 

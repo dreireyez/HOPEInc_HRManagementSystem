@@ -5,6 +5,15 @@ import { getDepts } from '../../services/departmentService';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = null, onSuccess }) {
+  const pick = (row, ...keys) => {
+    for (const key of keys) {
+      if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== '') {
+        return row[key];
+      }
+    }
+    return '';
+  };
+
   const [formData, setFormData] = useState({
     jobCode: '',
     deptCode: '',
@@ -27,9 +36,9 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        jobCode: initialData.jobCode || '',
-        deptCode: initialData.deptCode || '',
-        effDate: initialData.effDate || '',
+        jobCode: pick(initialData, 'jobcode', 'jobCode', 'job_code'),
+        deptCode: pick(initialData, 'deptcode', 'deptCode', 'dept_code'),
+        effDate: pick(initialData, 'effdate', 'effDate', 'eff_date'),
         salary: initialData.salary?.toString() || ''
       });
     } else {
@@ -73,10 +82,10 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
       }
 
       const payload = {
-        emp_no: empNo,
-        jobCode: formData.jobCode,
-        deptCode: formData.deptCode,
-        effDate: formData.effDate,
+        empno: empNo,
+        jobcode: formData.jobCode,
+        deptcode: formData.deptCode,
+        effdate: formData.effDate,
         salary: formData.salary ? parseFloat(formData.salary) : null,
         record_status: 'ACTIVE'
       };
@@ -145,8 +154,11 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
                     <option disabled>Loading...</option>
                   ) : (
                     jobs.map(job => (
-                      <option key={job.jobCode} value={job.jobCode}>
-                        {job.jobDesc} ({job.jobCode})
+                      <option
+                        key={pick(job, 'jobcode', 'jobCode', 'job_code')}
+                        value={pick(job, 'jobcode', 'jobCode', 'job_code')}
+                      >
+                        {pick(job, 'jobdesc', 'jobDesc', 'job_code')} ({pick(job, 'jobcode', 'jobCode', 'job_code')})
                       </option>
                     ))
                   )}
@@ -171,8 +183,11 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
                     <option disabled>Loading...</option>
                   ) : (
                     depts.map(dept => (
-                      <option key={dept.deptCode} value={dept.deptCode}>
-                        {dept.deptName} ({dept.deptCode})
+                      <option
+                        key={pick(dept, 'deptcode', 'deptCode', 'dept_code')}
+                        value={pick(dept, 'deptcode', 'deptCode', 'dept_code')}
+                      >
+                        {pick(dept, 'deptname', 'deptName', 'dept_code')} ({pick(dept, 'deptcode', 'deptCode', 'dept_code')})
                       </option>
                     ))
                   )}
