@@ -66,6 +66,24 @@ export const deactivateUser = async (userId) => {
 };
 
 /**
+ * Fetch audit log rows through a privileged admin RPC.
+ *
+ * @returns {Promise<{data: Array | null, error: null | Error}>}
+ */
+export const getActivityLogs = async () => {
+  try {
+    const { data, error } = await supabase.rpc('admin_list_activity_logs');
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
  * Update user_type to 'ADMIN' or 'USER'.
  * Uses a SUPERADMIN-only RPC so role changes stay blocked for ADMIN
  * and locked for inactive or SUPERADMIN target accounts.

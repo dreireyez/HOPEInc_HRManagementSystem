@@ -107,3 +107,20 @@ Record major HopeHRS project decisions here.
   - UserManagementPage should allow ADMIN to activate/deactivate regular users.
   - RLS for user management should permit ADMIN changes for non-SUPERADMIN targets only.
   - SUPERADMIN protection rules remain in force.
+
+### Decision 7: Use Dedicated Activity Logs With Timestamp-Only Stamp
+
+- Date: 2026-05-10
+- Owner: Team
+- Status: Accepted
+- Context: `stamp` should reflect the latest change date on HR rows, while admins need a full timeline of HR and user-management actions.
+- Options Considered: keep only `stamp`, derive history from `stamp`, create a separate audit table
+- Decision: Use a dedicated `activity_logs` table for full audit history, and store only the latest timestamp in each row's `stamp`.
+- Reason:
+  - `stamp` can only represent the latest change and cannot preserve a timeline.
+  - A dedicated audit table supports filtering, pagination, and future reporting from the Admin page.
+  - Database-driven logging keeps behavior consistent across CRUD screens and admin RPCs.
+- Impact:
+  - HR table writes should refresh `stamp` automatically.
+  - Activity logs should include HR data changes and user activation/role changes.
+  - Admin should expose a read-only `Activity Logs` tab for `ADMIN` and `SUPERADMIN`.

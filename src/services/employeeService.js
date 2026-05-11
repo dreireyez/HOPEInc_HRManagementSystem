@@ -60,23 +60,43 @@ export const getEmployees = async (userType) => {
  */
 export const getEmployee = async (empNo, userType) => {
   try {
-    let query = supabase
+    let employeeQuery = supabase
       .from('employee')
       .select('*')
       .eq('empno', empNo);
 
-    // Apply filter for regular users - only show ACTIVE records
     if (userType === 'USER') {
-      query = query.eq('record_status', 'ACTIVE');
+      employeeQuery = employeeQuery.eq('record_status', 'ACTIVE');
     }
 
-    const { data, error } = await query.maybeSingle();
+    const [employeeRes, currentJobRes] = await Promise.all([
+      employeeQuery.maybeSingle(),
+      supabase
+        .from('employee_current_job')
+        .select('empno, jobdesc, deptname, salary, currenteffdate')
+        .eq('empno', empNo)
+        .maybeSingle(),
+    ]);
 
-    if (error) {
-      throw error;
+    if (employeeRes.error) {
+      throw employeeRes.error;
     }
 
-    return { data, error: null };
+    const employee = employeeRes.data;
+    if (!employee) {
+      return { data: null, error: null };
+    }
+
+    return {
+      data: {
+        ...employee,
+        jobdesc: currentJobRes.data?.jobdesc ?? null,
+        deptname: currentJobRes.data?.deptname ?? null,
+        currentSalary: currentJobRes.data?.salary ?? null,
+        currentEffDate: currentJobRes.data?.currenteffdate ?? null,
+      },
+      error: null,
+    };
   } catch (err) {
     return { data: null, error: err };
   }
@@ -90,10 +110,19 @@ export const getEmployee = async (empNo, userType) => {
  */
 export const addEmployee = async (employeeData) => {
   try {
-    const { data, error } = await supabase
-      .from('employee')
-      .insert([employeeData])
-      .select();
+    const { data, error } = await supabase.rpc('create_employee_with_initial_assignment', {
+      p_empno: employeeData.empno,
+      p_firstname: employeeData.firstname,
+      p_lastname: employeeData.lastname,
+      p_gender: employeeData.gender,
+      p_email: employeeData.email ?? null,
+      p_hiredate: employeeData.hiredate ?? null,
+      p_birthdate: employeeData.birthdate ?? null,
+      p_jobcode: employeeData.jobcode,
+      p_deptcode: employeeData.deptcode,
+      p_effdate: employeeData.effdate,
+      p_salary: employeeData.salary ?? null,
+    });
 
     if (error) {
       throw error;

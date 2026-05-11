@@ -5,6 +5,24 @@ import { useAuth } from './AuthContext';
 
 const UserRightsContext = createContext({});
 
+const ADMIN_BASELINE_RIGHTS = new Set([
+  'EMP_VIEW',
+  'EMP_VIEW_ALL',
+  'EMP_ADD',
+  'EMP_EDIT',
+  'JH_VIEW',
+  'JH_ADD',
+  'JH_EDIT',
+  'JOB_VIEW',
+  'JOB_ADD',
+  'JOB_EDIT',
+  'DEPT_VIEW',
+  'DEPT_ADD',
+  'DEPT_EDIT',
+  'ADM_USER',
+  'SYS_INTEGRITY',
+]);
+
 export const UserRightsProvider = ({ children }) => {
   const { user } = useAuth();
   const [rights, setRights] = useState({});
@@ -22,38 +40,87 @@ export const UserRightsProvider = ({ children }) => {
 
       setLoading(true);
       try {
-        // Fetch user details including user_type
-        const { data: userData, error: userError } = await supabase
-          .from('user')
-          .select('userid, user_type, record_status')
-          .eq('userid', user.id)
-          .single();
+        const loadSingleUser = async () => {
+          const variants = ['userid', 'userId'];
 
-        if (userError) throw userError;
+          for (const key of variants) {
+            const { data, error } = await supabase
+              .from('user')
+              .select(`${key}, user_type, record_status`)
+              .eq(key, user.id)
+              .maybeSingle();
 
-        if (userData) {
-          setCurrentUser(userData);
+            if (!error && data) {
+              return {
+                userid: data[key],
+                user_type: data.user_type,
+                record_status: data.record_status,
+              };
+            }
+          }
+
+          return null;
+        };
+
+        const loadRightsRows = async () => {
+          const variants = ['user_id', 'userid', 'userId'];
+
+          for (const key of variants) {
+            const { data, error } = await supabase
+              .from('usermodule_rights')
+              .select('right_id, right_value')
+              .eq(key, user.id);
+
+            if (!error) {
+              return data || [];
+            }
+          }
+
+          return null;
+        };
+
+        const userData = await loadSingleUser();
+
+        if (!userData) {
+          throw new Error('Unable to load current user profile');
         }
 
-        // Fetch user rights
-        const { data, error } = await supabase
-          .from('usermodule_rights')
-          .select('right_id, right_value')
-          .eq('user_id', user.id);
+        setCurrentUser(userData);
 
-        if (error) throw error;
+        const data = await loadRightsRows();
 
         if (data) {
+          const isEnabledRight = (value) => {
+            if (value === true || value === 1) {
+              return true;
+            }
+
+            if (typeof value === 'string') {
+              const normalized = value.trim().toLowerCase();
+              return normalized === '1' || normalized === 'true' || normalized === 'yes';
+            }
+
+            return false;
+          };
+
           const rightsMap = data.reduce((acc, row) => {
-            acc[row.right_id] = row.right_value === 1;
+            const rightKey = String(row.right_id || row.rightId || '')
+              .trim()
+              .toUpperCase();
+
+            if (rightKey) {
+              acc[rightKey] = isEnabledRight(row.right_value ?? row.rightValue);
+            }
+
             return acc;
           }, {});
           setRights(rightsMap);
+        } else {
+          setRights({});
         }
       } catch (err) {
         console.error("Error fetching rights:", err.message);
         setRights({});
-        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -62,7 +129,21 @@ export const UserRightsProvider = ({ children }) => {
     fetchRights();
   }, [user]);
 
-  const can = (rightId) => !!rights[rightId];
+  const can = (rightId) => {
+    const normalizedRightId = String(rightId || '')
+      .trim()
+      .toUpperCase();
+
+    if (currentUser?.user_type === 'SUPERADMIN') {
+      return true;
+    }
+
+    if (currentUser?.user_type === 'ADMIN' && ADMIN_BASELINE_RIGHTS.has(normalizedRightId)) {
+      return true;
+    }
+
+    return !!rights[normalizedRightId];
+  };
 
   return (
     <UserRightsContext.Provider value={{ rights, can, loading, currentUser }}>

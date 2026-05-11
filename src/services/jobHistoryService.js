@@ -88,6 +88,34 @@ export const addJobHistory = async (historyData) => {
 };
 
 /**
+ * Fetch the average salary for a job from the salary summary view.
+ *
+ * @param {string} jobCode - Job code to inspect
+ * @returns {Promise<{data: number | null, error: null | Error}>}
+ */
+export const getAverageSalaryByJob = async (jobCode) => {
+  try {
+    if (!jobCode) {
+      return { data: null, error: null };
+    }
+
+    const { data, error } = await supabase
+      .from('salary_summary_by_job')
+      .select('avg_salary')
+      .eq('jobcode', jobCode)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data: data?.avg_salary ?? null, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
  * Updates an existing job history record by ID.
  * 
  * @param {number | string} id - Job history record ID to update

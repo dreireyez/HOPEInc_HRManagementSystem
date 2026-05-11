@@ -8,6 +8,9 @@ import {
 
 import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { ToastContainer } from '../components/ui/Toast';
+import { useToast } from '../components/ui/useToast';
 
 import JobHistoryModal from '../components/modals/JobHistoryModal';
 
@@ -15,6 +18,7 @@ const PAGE_SIZE = 10;
 
 export default function JobHistory() {
   const { can, currentUser } = useRights();
+  const toast = useToast();
   const canSeeAllStatuses =
     currentUser?.user_type &&
     currentUser.user_type !== 'USER';
@@ -60,6 +64,9 @@ export default function JobHistory() {
   const [openMenuId, setOpenMenuId] =
     useState(null);
 
+  const [deleteTarget, setDeleteTarget] = useState(null); // item to soft-delete
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -98,50 +105,28 @@ export default function JobHistory() {
     row[snake] ??
     '';
 
-  const handleSoftDelete = async (
-    item
-  ) => {
-    const label = `Emp #${f(
-      item,
-      'empNo',
-      'emp_no'
-    )}`;
+  const handleSoftDelete = (item) => {
+    setDeleteTarget(item);
+  };
 
-    if (
-      !window.confirm(
-        `Deactivate record: ${label}?`
-      )
-    )
-      return;
-
+  const confirmSoftDelete = async () => {
+    if (!deleteTarget) return;
+    const label = `Emp #${f(deleteTarget, 'empNo', 'emp_no')}`;
+    setDeleteLoading(true);
     const id = {
-      empno: f(
-        item,
-        'empNo',
-        'emp_no'
-      ),
-      jobcode: f(
-        item,
-        'jobCode',
-        'job_code'
-      ),
-      effdate: f(
-        item,
-        'effDate',
-        'eff_date'
-      ),
+      empno: f(deleteTarget, 'empNo', 'emp_no'),
+      jobcode: f(deleteTarget, 'jobCode', 'job_code'),
+      effdate: f(deleteTarget, 'effDate', 'eff_date'),
     };
-
-    const { error: delErr } =
-      await softDeleteJobHistory(id);
-
+    const { error: delErr } = await softDeleteJobHistory(id);
+    setDeleteLoading(false);
     if (delErr) {
-      alert(
-        `Failed to deactivate: ${delErr.message}`
-      );
+      toast.push(`Failed to deactivate: ${delErr.message}`, 'error');
     } else {
+      toast.push(`Record ${label} has been deactivated.`);
       fetchAll();
     }
+    setDeleteTarget(null);
   };
 
   const handleEdit = (item) => {
@@ -717,7 +702,7 @@ export default function JobHistory() {
               className={`
           grid items-center gap-4 px-4 py-2
           ${canSeeAllStatuses
-                  ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_60px]'
+                  ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_140px_60px]'
                   : canManageRows
                     ? 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr_60px]'
                     : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
@@ -768,6 +753,12 @@ export default function JobHistory() {
                 </div>
               )}
 
+              {canSeeAllStatuses && (
+                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Stamp
+                </div>
+              )}
+
               {canManageRows && <div />}
             </div>
 
@@ -789,7 +780,7 @@ export default function JobHistory() {
                 group
                 grid items-center gap-4
                     ${canSeeAllStatuses
-                        ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_60px]'
+                        ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_140px_60px]'
                         : canManageRows
                           ? 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr_60px]'
                           : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
@@ -861,6 +852,14 @@ export default function JobHistory() {
                             item.record_status
                           }
                         </Badge>
+                      </div>
+                    )}
+
+                    {canSeeAllStatuses && (
+                      <div className="text-center">
+                        <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[100px] block">
+                          {item.stamp || '—'}
+                        </span>
                       </div>
                     )}
 
@@ -977,6 +976,46 @@ export default function JobHistory() {
         initialData={editingRecord}
         onSuccess={handleModalClose}
       />
+
+      {/* Deactivation confirmation dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        icon="history_toggle_off"
+        title="Deactivate History Record?"
+        description={
+          deleteTarget ? (
+            <>
+              You are about to deactivate the job history record for{' '}
+              <strong className="text-[var(--color-on-surface)]">
+                Employee #{f(deleteTarget, 'empNo', 'emp_no')}
+              </strong>
+              {' '}—{' '}
+              <span className="font-mono">
+                {f(deleteTarget, 'jobCode', 'job_code')}
+              </span>
+              {' '}in{' '}
+              <span className="font-mono">
+                {f(deleteTarget, 'deptCode', 'dept_code')}
+              </span>
+              {' '}effective{' '}
+              <span className="font-mono">
+                {new Date(f(deleteTarget, 'effDate', 'eff_date')).toLocaleDateString()}
+              </span>.
+              <br /><br />
+              This will set the record to{' '}
+              <strong className="text-[var(--color-error)]">INACTIVE</strong>.
+              It can be recovered from the Deleted Items page.
+            </>
+          ) : null
+        }
+        confirmLabel="Deactivate Record"
+        confirmVariant="danger"
+        onCancel={() => { if (!deleteLoading) setDeleteTarget(null); }}
+        onConfirm={confirmSoftDelete}
+        loading={deleteLoading}
+      />
+
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismiss} />
     </div>
   );
 }
