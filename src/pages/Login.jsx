@@ -79,7 +79,7 @@ export default function LoginPage() {
               HopeHRS
             </h1>
             <p className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-[var(--color-on-surface-variant)] mt-1.5">
-              HR Management System
+              HR Management
             </p>
 
             <div className="mt-5 px-4 py-2 rounded-full bg-[var(--color-primary-soft)] shadow-inset">
