@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { Button } from './Button';
 
 /**
@@ -29,9 +30,12 @@ export function ConfirmDialog({
 }) {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 overlay-scrim animate-in fade-in">
-      <div className="modal-panel w-full max-w-md rounded-[28px] p-8 animate-in zoom-in-95">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#181c1c]/40 backdrop-blur-sm animate-in fade-in">
+      <div 
+        className="modal-panel w-full max-w-md rounded-[28px] p-8 animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex flex-col items-center text-center">
           {/* Icon badge */}
           <div className={`w-16 h-16 rounded-3xl ${iconBg} flex items-center justify-center ${iconColor} mb-6 shadow-inset`}>
@@ -71,6 +75,7 @@ export function ConfirmDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
