@@ -5,6 +5,8 @@ import { getEmployee } from '../services/employeeService';
 import { useRights } from '../context/UserRightsContext';
 import EditEmployeeModal from '../components/modals/EditEmployeeModal';
 import { Badge } from '../components/ui/Badge';
+import { getEmployeeFullHistory } from '../services/reportService';
+import { exportEmployeeProfilePDF } from '../utils/pdfExport';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
@@ -58,6 +60,18 @@ export default function EmployeeDetailPage() {
     empNo: employee.empno
   } : null;
 
+  const handleDownloadPDF = async () => {
+    if (!profile) return;
+    try {
+      // Show loading state if needed (optional)
+      const { data } = await getEmployeeFullHistory(profile.empNo);
+      exportEmployeeProfilePDF(profile, data || []);
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500">
 
@@ -83,7 +97,10 @@ export default function EmployeeDetailPage() {
                 <span className="material-symbols-outlined text-[16px]">edit</span> Edit Profile
               </button>
             )}
-            <button className="px-6 py-2 rounded-lg bg-[var(--color-primary-container)] shadow-outset hover:shadow-outset-hover hover:shadow-glow active:shadow-inset font-mono text-[11px] uppercase tracking-widest font-bold text-white hover:bg-[var(--color-primary)] transition-all cursor-pointer flex items-center gap-2">
+            <button 
+              onClick={handleDownloadPDF}
+              className="px-6 py-2 rounded-lg bg-[var(--color-primary-container)] shadow-outset hover:shadow-outset-hover hover:shadow-glow active:shadow-inset font-mono text-[11px] uppercase tracking-widest font-bold text-white hover:bg-[var(--color-primary)] transition-all cursor-pointer flex items-center gap-2"
+            >
               <span className="material-symbols-outlined text-[16px]">download</span> Download PDF
             </button>
           </div>
