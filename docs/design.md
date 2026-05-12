@@ -13,7 +13,6 @@ This document catalogs the primary UI elements, styles, and behaviors used acros
 
 ## 2. Interactive List Elements
 - **Interactive Surfaces**: Clickable or focusable list items (like the Recent Hires or Activity Logs) utilize the `interactive-surface` class.
-- **Hover Effects**: All interactive items use `hover:-translate-y-0.5 hover:shadow-md hover:bg-white transition-all duration-200` to create a responsive, tactile feedback when mousing over.
 - **Alternating Backgrounds**: To ensure high readability, lists utilize `odd:bg-[rgba(255,255,255,0.96)]` and `even:bg-[rgba(245,248,252,0.94)]`.
 
 ## 3. Avatars & Icons

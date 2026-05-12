@@ -15,6 +15,15 @@ export default function Dashboard() {
   const [recentEmployees, setRecentEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const isAdmin = userType === 'ADMIN' || userType === 'SUPERADMIN';
+
+  const activityLogs = [
+    { id: 1, action: 'ACTIVATE USER', target: 'USR-935B', actor: 'Root', time: '2:52 PM' },
+    { id: 2, action: 'DEPT UPDATE', target: 'Engineering', actor: 'HR Manager', time: '09:15 AM' },
+    { id: 3, action: 'ROLE ASSIGN', target: 'EMP-003', actor: 'System', time: 'Yesterday' },
+    { id: 4, action: 'SYSTEM BACKUP', target: 'Database', actor: 'Automated', time: 'Oct 11' }
+  ];
+
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
@@ -103,8 +112,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 flex-grow pb-2">
-        <div className="col-span-1 md:col-span-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow pb-2">
+        <div className={`col-span-1 ${isAdmin ? 'lg:col-span-8' : 'lg:col-span-12'}`}>
           <Card className="h-full bg-[rgba(255,255,255,0.84)] flex flex-col" padding="md">
             <div className="flex justify-between items-center mb-5">
               <div>
@@ -136,7 +145,7 @@ export default function Dashboard() {
                         key={emp.empno}
                         type="button"
                         onClick={() => navigate(`/employees/${emp.empno}`)}
-                        className="interactive-surface flex w-full items-center gap-4 rounded-2xl border border-transparent p-3.5 text-left focus-visible:ring-2 focus-visible:ring-[var(--color-primary-container)] odd:bg-[rgba(255,255,255,0.96)] even:bg-[rgba(245,248,252,0.94)]"
+                        className="interactive-surface flex w-full items-center gap-4 rounded-2xl border border-transparent p-3.5 text-left focus-visible:ring-2 focus-visible:ring-[var(--color-primary-container)] odd:bg-[rgba(255,255,255,0.96)] even:bg-[rgba(245,248,252,0.94)] hover:-translate-y-0.5 hover:shadow-md hover:bg-white transition-all duration-200 cursor-pointer"
                       >
                         <div className="w-11 h-11 rounded-full shrink-0 gradient-primary border border-white/15 flex items-center justify-center text-white font-mono font-bold text-base shadow-outset-soft">
                           {initials}
@@ -164,33 +173,38 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="col-span-1 md:col-span-4">
-          <Card className="h-full bg-[rgba(248,251,255,0.96)] flex flex-col" padding="md">
-            <h3 className="text-xl font-black text-[var(--color-on-surface)] tracking-tight mb-1">Quick Navigation</h3>
-            <p className="text-sm text-[var(--color-on-surface-variant)]/88 mb-6">Jump into the busiest areas of the system.</p>
-            <div className="space-y-3.5 flex-grow">
-              {[
-                { label: 'Employees', path: '/employees', icon: 'badge' },
-                { label: 'Departments', path: '/departments', icon: 'domain' },
-                { label: 'Reports', path: '/reports', icon: 'analytics' },
-              ].map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => navigate(item.path)}
-                  className="interactive-surface flex w-full items-center gap-4 rounded-2xl p-3.5 text-left"
-                >
-                  <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white shadow-outset-soft">
-                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      {item.icon}
-                    </span>
+        {isAdmin && (
+          <div className="col-span-1 lg:col-span-4">
+            <Card className="h-full bg-[rgba(248,251,255,0.96)] flex flex-col" padding="md">
+              <h3 className="text-xl font-black text-[var(--color-on-surface)] tracking-tight mb-1">Activity Logs</h3>
+              <p className="text-sm text-[var(--color-on-surface-variant)]/88 mb-6">Recent system actions.</p>
+              
+              <div className="space-y-3.5 flex-grow">
+                {activityLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="interactive-surface flex w-full items-center gap-4 rounded-2xl border border-transparent p-3.5 text-left odd:bg-[rgba(255,255,255,0.96)] even:bg-[rgba(245,248,252,0.94)] hover:-translate-y-0.5 hover:shadow-md hover:bg-white transition-all duration-200 cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white shadow-outset-soft shrink-0">
+                      <span className="material-symbols-outlined text-[18px]">bolt</span>
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <h4 className="font-bold text-[13px] text-[var(--color-on-surface)] truncate">
+                          {log.action}
+                        </h4>
+                        <span className="text-[10px] font-mono text-[var(--color-outline)]">{log.time}</span>
+                      </div>
+                      <p className="text-[12px] text-[var(--color-on-surface-variant)]/88 truncate">
+                        <span className="font-semibold">{log.actor}</span> on <span className="font-mono">{log.target}</span>
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-[15px] font-semibold text-[var(--color-on-surface)]">{item.label}</span>
-                  <span className="material-symbols-outlined ml-auto text-[var(--color-outline)] text-[18px]">arrow_forward</span>
-                </button>
-              ))}
-            </div>
-          </Card>
-        </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

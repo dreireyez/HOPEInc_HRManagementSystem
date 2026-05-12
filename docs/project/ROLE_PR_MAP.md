@@ -304,6 +304,12 @@ Branch: `fix/ui-final-polish`
 Target: `dev`
 Deliverable: Loading, empty, error, and responsive fixes.
 
+#### PR-04
+Title: `PR-04: UI Dashboard RBAC`
+Branch: `feat/dashboard-rbac-widgets`
+Target: `dev`
+Deliverable: Dashboard RBAC implementation featuring Admin-exclusive Activity Logs widget and dynamic full-width Recent Hires layout for standard users.
+
 ### M3 - Backend / Database Engineer
 
 #### PR-01
