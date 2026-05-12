@@ -36,7 +36,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-[var(--color-surface)] text-[var(--color-on-surface)] flex selection:bg-[var(--color-primary-container)]/20">
-      <aside className="sidebar-frame fixed left-0 top-0 hidden h-full w-[330px] lg:flex flex-col px-5 py-6 z-40">
+      <aside className="sidebar-frame fixed left-0 top-0 hidden h-full w-[260px] lg:flex flex-col px-4 py-6 z-40">
         <div className="surface-panel gradient-primary-soft sidebar-shell flex h-full flex-col rounded-[28px] px-4 py-5">
           <button
             type="button"
@@ -51,7 +51,7 @@ export default function Layout() {
             <div>
               <div className="font-sans font-bold tracking-tight text-xl text-[#181c1c]">Hope, Inc.</div>
               <div className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-[#3f4948]">
-                HR Management System
+                HR Management
               </div>
             </div>
           </button>
@@ -127,7 +127,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      <main className="min-h-screen flex-1 px-4 pb-24 pt-4 lg:ml-[330px] lg:px-7 lg:pb-8 lg:pt-6">
+      <main className="min-h-screen flex-1 px-4 pb-24 pt-4 lg:ml-[260px] lg:px-7 lg:pb-8 lg:pt-6">
         <div className="mx-auto w-full max-w-[1280px]">
           <div key={location.pathname} className="animate-in fade-in slide-in-from-bottom-4">
             <Outlet />
