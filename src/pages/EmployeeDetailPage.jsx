@@ -4,6 +4,7 @@ import JobHistoryPanel from '../components/JobHistoryPanel';
 import { getEmployee } from '../services/employeeService';
 import { useRights } from '../context/UserRightsContext';
 import EditEmployeeModal from '../components/modals/EditEmployeeModal';
+import { Badge } from '../components/ui/Badge';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
@@ -118,15 +119,17 @@ export default function EmployeeDetailPage() {
 
               <div className="relative shrink-0 mx-auto md:mx-0">
                 {/* Initials avatar — no external image dependency */}
-                <div className="w-24 h-24 rounded-full flex items-center justify-center bg-[#f7faf9] shadow-[4px_4px_8px_#d7dbda,-4px_-4px_8px_#ffffff] shrink-0">
-                  <span className="font-mono font-black text-3xl text-[#004c4c] select-none">
-                    {`${profile.firstName} ${profile.lastName}`
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()}
-                  </span>
-                </div>
+                {/* Initials avatar using Badge component */}
+                <Badge 
+                  variant="primary" 
+                  className="!w-24 !h-24 !text-4xl !p-0 !flex !items-center !justify-center !shadow-outset shrink-0 select-none !font-black !tracking-normal !leading-none"
+                >
+                  {`${profile.firstName} ${profile.lastName}`
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()}
+                </Badge>
                 <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-[var(--color-surface)] shadow-outset flex items-center justify-center">
                   <div className={`w-3 h-3 rounded-full shadow-[inset_1px_1px_2px_rgba(0,0,0,0.2)] ${profile.status === 'Active' ? 'bg-[#15803d]' : 'bg-[#ba1a1a]'}`}></div>
                 </div>
@@ -140,14 +143,14 @@ export default function EmployeeDetailPage() {
                   <p className="font-sans text-xl text-[var(--color-primary-container)] font-medium mb-4">{profile.role}</p>
 
                   <div className="flex flex-wrap gap-3 mb-6 justify-center md:justify-start">
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">domain</span>
-                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">{profile.dept}</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">badge</span>
-                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">EMP-{profile.empNo}</span>
-                    </div>
+                    <Badge variant="default" className="flex items-center gap-2 px-3 py-1.5 h-8">
+                      <span className="material-symbols-outlined text-[14px]">domain</span>
+                      {profile.dept}
+                    </Badge>
+                    <Badge variant="default" className="flex items-center gap-2 px-3 py-1.5 h-8">
+                      <span className="material-symbols-outlined text-[14px]">badge</span>
+                      EMP-{profile.empNo}
+                    </Badge>
                   </div>
                 </div>
 
@@ -174,9 +177,9 @@ export default function EmployeeDetailPage() {
                   <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
                   <div>
                     <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Record Status</p>
-                    <p className={`font-sans text-sm font-semibold ${profile.status === 'Active' ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
+                    <Badge variant={profile.status === 'Active' ? 'success' : 'error'}>
                       {profile.status}
-                    </p>
+                    </Badge>
                   </div>
                 </div>
               </div>

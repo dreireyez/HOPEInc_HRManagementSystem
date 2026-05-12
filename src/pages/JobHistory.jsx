@@ -599,10 +599,27 @@ export default function JobHistory() {
                     )}
 
                     {canSeeAllStatuses && (
-                      <div className="text-center">
-                        <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[100px] block mx-auto">
-                          {item.stamp || '—'}
-                        </span>
+                      <div className="flex flex-col items-center">
+                        {(() => {
+                          if (!item.stamp) return <span className="font-mono text-[11px] text-slate-400">—</span>;
+                          const raw = String(item.stamp).trim();
+                          const dateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+                          const datePart = dateMatch ? dateMatch[1] : raw;
+                          const timePart = dateMatch ? raw.slice(dateMatch[1].length).trim() : '';
+                          
+                          return (
+                            <>
+                              <span className="font-mono text-[11px] font-bold text-[#3f4948] leading-tight">
+                                {datePart}
+                              </span>
+                              {timePart && (
+                                <span className="font-mono text-[9px] font-medium text-[#6f7979] mt-0.5 leading-tight">
+                                  {timePart}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
 
