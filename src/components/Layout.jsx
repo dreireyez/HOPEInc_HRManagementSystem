@@ -29,7 +29,6 @@ export default function Layout() {
     { name: 'Jobs', path: '/jobs', icon: 'work' },
     { name: 'Departments', path: '/departments', icon: 'domain' },
     { name: 'Reports', path: '/reports', icon: 'analytics' },
-    { name: 'Archive', path: '/deleted-items', icon: 'delete', right: 'ADM_USER' },
   ];
 
   const visibleNavItems = navItems.filter((item) => !item.right || can(item.right));
@@ -88,7 +87,7 @@ export default function Layout() {
             ))}
 
             {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
-              <div className="mt-5 border-t border-[var(--color-outline-variant)]/55 pt-4">
+              <div className="mt-5 border-t border-[var(--color-outline-variant)]/55 pt-4 flex flex-col gap-1.5">
                 <NavLink
                   to="/admin"
                   className={({ isActive }) =>
@@ -106,6 +105,27 @@ export default function Layout() {
                       />
                       <span className="nav-item-icon material-symbols-outlined text-[20px]">admin_panel_settings</span>
                       <span className="nav-item-label">Admin</span>
+                    </>
+                  )}
+                </NavLink>
+
+                <NavLink
+                  to="/deleted-items"
+                  className={({ isActive }) =>
+                    `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${isActive
+                      ? 'gradient-primary text-white shadow-outset-soft'
+                      : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
+                          }`}
+                      />
+                      <span className="nav-item-icon material-symbols-outlined text-[20px]">delete</span>
+                      <span className="nav-item-label">Archive</span>
                     </>
                   )}
                 </NavLink>
