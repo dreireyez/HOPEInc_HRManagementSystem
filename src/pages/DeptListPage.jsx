@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRights } from '../context/UserRightsContext';
 import DeptModal from '../components/modals/DeptModal';
 import { getDepts, softDeleteDept } from '../services/departmentService';
+import { getEmployees } from '../services/employeeService';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -57,6 +59,7 @@ const CARD_THEMES = [
 
 export default function DeptListPage() {
   const { can, currentUser } = useRights();
+  const navigate = useNavigate();
   const toast = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [depts, setDepts] = useState([]);
@@ -65,18 +68,30 @@ export default function DeptListPage() {
   const [editingDept, setEditingDept] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // { code, name }
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedDept, setSelectedDept] = useState(null);
+  const [employees, setEmployees] = useState([]);
 
-  const fetchDepts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error: fetchError } = await getDepts(currentUser?.user_type || 'USER');
+      const userType = currentUser?.user_type || 'USER';
+      const [deptRes, empRes] = await Promise.all([
+        getDepts(userType),
+        getEmployees(userType)
+      ]);
 
-      if (fetchError) {
-        setError(fetchError.message);
+      if (deptRes.error) {
+        setError(deptRes.error.message);
       } else {
-        setDepts(data || []);
+        setDepts(deptRes.data || []);
+      }
+
+      if (empRes.error && !deptRes.error) {
+        setError(empRes.error.message);
+      } else {
+        setEmployees(empRes.data || []);
       }
     } catch (err) {
       setError(err.message);
@@ -86,8 +101,8 @@ export default function DeptListPage() {
   }, [currentUser?.user_type]);
 
   useEffect(() => {
-    fetchDepts();
-  }, [fetchDepts]);
+    fetchData();
+  }, [fetchData]);
 
   const handleOpenModal = (dept = null) => {
     setEditingDept(dept);
@@ -97,7 +112,7 @@ export default function DeptListPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingDept(null);
-    fetchDepts();
+    fetchData();
   };
 
   /** Opens the confirmation dialog instead of window.confirm. */
@@ -115,7 +130,7 @@ export default function DeptListPage() {
       toast.push(`Failed to deactivate: ${delErr.message}`, 'error');
     } else {
       toast.push(`"${deleteTarget.name}" has been deactivated.`);
-      fetchDepts();
+      fetchData();
     }
     setDeleteTarget(null);
   };
@@ -162,21 +177,23 @@ export default function DeptListPage() {
           <p className="text-[var(--color-on-surface-variant)] font-medium text-sm">No departments found.</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {depts.map((dept, index) => {
-            const code = dept.deptcode ?? dept.deptCode ?? dept.dept_code ?? dept.code ?? '';
-            const name = dept.deptname ?? dept.deptName ?? dept.dept_name ?? dept.name ?? 'Unnamed';
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className={`transition-all duration-300 items-start content-start ${selectedDept === null ? 'lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'lg:col-span-5 grid grid-cols-1 gap-5'}`}>
+            {depts.map((dept, index) => {
+              const code = dept.deptcode ?? dept.deptCode ?? dept.dept_code ?? dept.code ?? '';
+              const name = dept.deptname ?? dept.deptName ?? dept.dept_name ?? dept.name ?? 'Unnamed';
 
-            // Assign theme dynamically
-            const theme = CARD_THEMES[index % CARD_THEMES.length];
+              // Assign theme dynamically
+              const theme = CARD_THEMES[index % CARD_THEMES.length];
+              const isActive = selectedDept === name;
 
-            return (
-              <Card
-                key={code || dept.id || name}
-                interactive
-                padding="md"
-                className="group relative overflow-hidden flex flex-col justify-between min-h-[148px] hover:-translate-y-1 transition-all duration-300"
-              >
+              return (
+                <div key={code || dept.id || name} className="cursor-pointer" onClick={() => setSelectedDept(isActive ? null : name)}>
+                <Card
+                  interactive
+                  padding="md"
+                  className={`group relative overflow-hidden flex flex-col justify-between min-h-[148px] hover:-translate-y-1 transition-all duration-300 ${isActive ? 'shadow-inset bg-[var(--color-surface-bright)] ring-2 ring-[var(--color-primary-container)]' : ''}`}
+                >
                 {/* 1. Aesthetic Mesh Gradient Background */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
 
@@ -233,9 +250,79 @@ export default function DeptListPage() {
                     )}
                   </div>
                 </div>
+                </Card>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Right Side: Drill-down Roster */}
+          {selectedDept && (
+            <div className="lg:col-span-7 flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
+              <Card padding="lg" className="flex flex-col h-full bg-[rgba(255,255,255,0.84)] rounded-[28px]">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-[var(--color-outline-variant)]/50">
+                  <div>
+                    <h2 className="text-2xl font-black text-[var(--color-primary)]">{selectedDept}</h2>
+                    <p className="text-sm text-[var(--color-on-surface-variant)] mt-1">Employee Roster</p>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setSelectedDept(null); }}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)] transition-all cursor-pointer"
+                    title="Close panel"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {(() => {
+                    const deptEmployees = employees
+                      .filter(e => e.deptname === selectedDept)
+                      .sort((a, b) => {
+                        const nameA = ((a.firstname || '') + ' ' + (a.lastname || '')).trim().toLowerCase();
+                        const nameB = ((b.firstname || '') + ' ' + (b.lastname || '')).trim().toLowerCase();
+                        return nameA.localeCompare(nameB);
+                      });
+
+                    if (deptEmployees.length === 0) {
+                      return (
+                        <div className="p-8 text-center text-[var(--color-on-surface-variant)]/60 flex flex-col items-center justify-center">
+                          <span className="material-symbols-outlined text-4xl mb-3 opacity-50">group_off</span>
+                          <p>No employees found in this department.</p>
+                        </div>
+                      );
+                    }
+                    return deptEmployees.map(emp => {
+                      const initials = `${(emp.firstname || '')[0] || ''}${(emp.lastname || '')[0] || ''}`.toUpperCase();
+                      return (
+                        <button
+                          key={emp.empno}
+                          type="button"
+                          onClick={() => navigate(`/employees/${emp.empno}`)}
+                          className="interactive-surface flex w-full items-center gap-4 rounded-2xl border border-transparent p-3.5 text-left focus-visible:ring-2 focus-visible:ring-[var(--color-primary-container)] odd:bg-[rgba(255,255,255,0.96)] even:bg-[rgba(245,248,252,0.94)]"
+                        >
+                          <div className="w-11 h-11 rounded-full shrink-0 gradient-primary border border-white/15 flex items-center justify-center text-white font-mono font-bold text-base shadow-outset-soft">
+                            {initials}
+                          </div>
+                          <div className="flex-grow min-w-0">
+                            <h4 className="font-bold text-[15px] text-[var(--color-on-surface)] truncate">
+                              {emp.firstname} {emp.lastname}
+                            </h4>
+                            <p className="text-sm text-[var(--color-on-surface-variant)]/88 truncate">
+                              {emp.jobdesc || 'No job assigned'}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-[var(--color-surface-container)] px-3 py-1.5 text-[10px] font-mono font-medium text-[var(--color-on-surface-variant)] uppercase tracking-[0.24em] shadow-inset shrink-0">
+                            {emp.empno}
+                          </span>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
               </Card>
-            );
-          })}
+            </div>
+          )}
         </div>
       )}
 

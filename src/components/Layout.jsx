@@ -27,9 +27,9 @@ export default function Layout() {
     { name: 'Employees', path: '/employees', icon: 'badge' },
     { name: 'History', path: '/jobhistory', icon: 'history' },
     { name: 'Jobs', path: '/jobs', icon: 'work' },
-    { name: 'Units', path: '/departments', icon: 'domain' },
+    { name: 'Departments', path: '/departments', icon: 'domain' },
     { name: 'Reports', path: '/reports', icon: 'analytics' },
-    { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER' },
+    { name: 'Archive', path: '/deleted-items', icon: 'delete', right: 'ADM_USER' },
   ];
 
   const visibleNavItems = navItems.filter((item) => !item.right || can(item.right));
