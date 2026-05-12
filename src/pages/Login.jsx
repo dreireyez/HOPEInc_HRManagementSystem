@@ -63,22 +63,16 @@ export default function LoginPage() {
 
           {/* Brand mark */}
           <div className="flex flex-col items-center text-center mb-10">
-            <div
-              className="w-16 h-16 rounded-[22px] gradient-primary flex items-center justify-center shadow-outset mb-5"
-              aria-hidden="true"
-            >
-              <span
-                className="material-symbols-outlined text-white text-[30px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                fluid
+            <div className="sidebar-brand-mark gradient-primary flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-outset-soft">
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                assured_workload
               </span>
             </div>
 
-            <h1 className="text-[1.75rem] font-black tracking-tight text-[var(--color-on-surface)] leading-tight">
-              HopeHRS
+            <h1 className="font-sans font-bold tracking-tight text-2xl text-[#181c1c]">
+              Hope, Inc.
             </h1>
-            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-[var(--color-on-surface-variant)] mt-1.5">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#3f4948] mt-1.5">
               HR Management
             </p>
 
