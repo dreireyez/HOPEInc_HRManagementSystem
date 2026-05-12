@@ -177,14 +177,6 @@ export default function EmployeeDetailPage() {
             <div className="col-span-12 lg:col-span-4 bg-[var(--color-surface)] rounded-2xl p-8 shadow-outset flex flex-col gap-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-outset-hover">
               <div className="flex items-center justify-between border-b border-[var(--color-outline-variant)]/20 pb-4">
                 <h3 className="font-sans text-xl font-bold text-[var(--color-on-surface)]">Contact Info</h3>
-                {can('EMP_EDIT') && (
-                  <button 
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="p-2 rounded-full shadow-outset bg-[var(--color-surface)] hover:shadow-outset-hover hover:-translate-y-[1px] active:shadow-inset text-[var(--color-primary-container)] transition-all h-8 w-8 flex items-center justify-center cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">edit</span>
-                  </button>
-                )}
               </div>
               <div className="flex flex-col gap-5">
                 <div className="flex items-center gap-4 group cursor-pointer">
