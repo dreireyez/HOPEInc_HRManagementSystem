@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useRights } from '../context/UserRightsContext';
 import supabase from '../lib/supabaseClient';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 
 /**
  * Layout
@@ -18,9 +18,19 @@ export default function Layout() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const confirmLogout = async () => {
-    setLoggingOut(true);
-    await supabase.auth.signOut();
-    navigate('/login');
+    try {
+      setLoggingOut(true);
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // We don't necessarily need navigate('/login') here because 
+      // ProtectedRoute will catch the null user and redirect automatically.
+    } catch (err) {
+      console.error('Logout failed:', err.message);
+      setLoggingOut(false);
+      setShowLogoutDialog(false);
+    }
   };
 
   const navItems = [
@@ -185,81 +195,18 @@ export default function Layout() {
         </div>
       </nav>
 
-      {/* ── Logout Confirmation Dialog ── */}
-      {showLogoutDialog && createPortal(
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#181c1c]/40 backdrop-blur-sm animate-in fade-in"
-          style={{ animationDuration: '200ms' }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutDialog(false); }}
-        >
-          <div
-            className="modal-panel w-full max-w-sm rounded-[var(--radius-xl)] overflow-hidden animate-in zoom-in-95"
-            style={{ animationDuration: '240ms' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="px-8 pt-8 pb-5 flex flex-col items-center text-center">
-              {/* Warning icon */}
-              <div className="w-16 h-16 rounded-2xl bg-[var(--color-error-container)] flex items-center justify-center mb-5 shadow-inset">
-                <span
-                  className="material-symbols-outlined text-[var(--color-error)] text-[30px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  logout
-                </span>
-              </div>
-              <h2 className="text-xl font-black text-[var(--color-on-surface)] tracking-tight">
-                Sign Out?
-              </h2>
-              <p className="text-sm text-[var(--color-on-surface-variant)] mt-2 leading-relaxed">
-                Your session will be ended and you&apos;ll be returned to the login screen.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="px-8 pb-8 flex flex-col gap-3">
-              <button
-                onClick={confirmLogout}
-                disabled={loggingOut}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold text-sm
-                  bg-[var(--color-error)] text-[var(--color-on-error)]
-                  shadow-outset hover:-translate-y-[1px] hover:shadow-[0_16px_34px_rgba(186,26,26,0.22)]
-                  active:translate-y-0 active:shadow-inset-deep
-                  transition-all duration-[var(--motion-base)] ease-[var(--ease-standard)]
-                  disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {loggingOut ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
-                    </svg>
-                    Signing out…
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
-                    Yes, Sign Out
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => setShowLogoutDialog(false)}
-                disabled={loggingOut}
-                className="w-full rounded-2xl px-5 py-3 font-semibold text-sm
-                  bg-[var(--color-surface-bright)] text-[var(--color-on-surface)]
-                  border border-[var(--color-outline-variant)]/70
-                  shadow-outset-soft hover:-translate-y-[1px] hover:shadow-outset
-                  active:translate-y-0
-                  transition-all duration-[var(--motion-base)] ease-[var(--ease-standard)]
-                  disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        icon="logout"
+        title="Sign Out?"
+        description="Your session will be ended and you'll be returned to the login screen."
+        confirmLabel="Yes, Sign Out"
+        confirmVariant="danger"
+        onCancel={() => setShowLogoutDialog(false)}
+        onConfirm={confirmLogout}
+        loading={loggingOut}
+      />
     </div>
   );
 }
