@@ -1,4 +1,5 @@
 import supabase from '../lib/supabaseClient.js';
+import { makeStamp } from '../utils/makeStamp.js';
 
 /**
  * Fetches ALL job history records across all employees.
@@ -44,7 +45,7 @@ export const getJobHistory = async (empNo, userType) => {
     let query = supabase
       .from('jobhistory')
       .select('*')
-      .eq('emp_no', empNo);
+      .eq('empno', empNo);
 
     // Apply filter for regular users - only show ACTIVE records
     if (userType === 'USER') {
@@ -94,12 +95,14 @@ export const addJobHistory = async (historyData) => {
  * @param {Object} updateData - Fields to update
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const updateJobHistory = async (id, updateData) => {
+export const updateJobHistory = async (empNo, jobCode, effDate, updateData) => {
   try {
     const { data, error } = await supabase
       .from('jobhistory')
       .update(updateData)
-      .eq('id', id)
+      .eq('empno', empNo)
+      .eq('jobcode', jobCode)
+      .eq('effdate', effDate)
       .select();
 
     if (error) {
@@ -113,17 +116,46 @@ export const updateJobHistory = async (id, updateData) => {
 };
 
 /**
+ * Returns the most recently recorded deptCode for a given jobCode.
+ * Used to pre-populate the department field in JobHistoryModal when a job is selected.
+ *
+ * @param {string} jobCode - Job code to look up
+ * @returns {Promise<{deptCode: string | null, error: null | Error}>}
+ */
+export const getDeptCodeForJob = async (jobCode) => {
+  try {
+    const { data, error } = await supabase
+      .from('jobhistory')
+      .select('deptcode, effdate')
+      .eq('jobcode', jobCode)
+      .eq('record_status', 'ACTIVE')
+      .order('effdate', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return { deptCode: data?.deptcode || null, error: null };
+  } catch (err) {
+    return { deptCode: null, error: err };
+  }
+};
+
+/**
  * Soft deletes a job history record by setting record_status to 'INACTIVE'.
  * 
  * @param {number | string} id - Job history record ID to soft delete
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const softDeleteJobHistory = async (id) => {
+export const softDeleteJobHistory = async (empNo, jobCode, effDate, userId) => {
   try {
     const { data, error } = await supabase
       .from('jobhistory')
-      .update({ record_status: 'INACTIVE' })
-      .eq('id', id)
+      .update({
+        record_status: 'INACTIVE',
+        stamp: makeStamp('DEACTIVATED', userId)
+      })
+      .eq('empno', empNo)
+      .eq('jobcode', jobCode)
+      .eq('effdate', effDate)
       .select();
 
     if (error) {
@@ -142,12 +174,17 @@ export const softDeleteJobHistory = async (id) => {
  * @param {number | string} id - Job history record ID to recover
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const recoverJobHistory = async (id) => {
+export const recoverJobHistory = async (empNo, jobCode, effDate, userId) => {
   try {
     const { data, error } = await supabase
       .from('jobhistory')
-      .update({ record_status: 'ACTIVE' })
-      .eq('id', id)
+      .update({
+        record_status: 'ACTIVE',
+        stamp: makeStamp('REACTIVATED', userId)
+      })
+      .eq('empno', empNo)
+      .eq('jobcode', jobCode)
+      .eq('effdate', effDate)
       .select();
 
     if (error) {

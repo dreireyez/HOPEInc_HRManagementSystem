@@ -7,4 +7,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './docs/test-cases/setup.js',
+    include: ['docs/test-cases/**/*.test.{js,jsx}'],
+  },
 })

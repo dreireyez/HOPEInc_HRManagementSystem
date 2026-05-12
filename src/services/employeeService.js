@@ -1,4 +1,7 @@
 import supabase from '../lib/supabaseClient.js';
+import { makeStamp } from '../utils/makeStamp.js';
+
+const todayISODate = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Fetches employees from the database.
@@ -92,8 +95,34 @@ export const addEmployee = async (employeeData) => {
  * @param {Object} updateData - Fields to update
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const updateEmployee = async (empNo, updateData) => {
+export const updateEmployee = async (empNo, updateData, userId) => {
   try {
+    // If sepdate is being introduced on an ACTIVE employee, treat the edit as
+    // a soft-delete: the DB trigger will also catch direct DB writes; doing it
+    // here keeps the audit stamp consistent (DEACTIVATED + actor short id).
+    if (updateData && updateData.sepdate) {
+      const { data: existing } = await supabase
+        .from('employee')
+        .select('sepdate, record_status')
+        .eq('empno', empNo)
+        .maybeSingle();
+      const wasActive = !existing?.sepdate && existing?.record_status === 'ACTIVE';
+      if (wasActive) {
+        const merged = {
+          ...updateData,
+          record_status: 'INACTIVE',
+          stamp: makeStamp('DEACTIVATED', userId),
+        };
+        const { data, error } = await supabase
+          .from('employee')
+          .update(merged)
+          .eq('empno', empNo)
+          .select();
+        if (error) throw error;
+        return { data, error: null };
+      }
+    }
+
     const { data, error } = await supabase
       .from('employee')
       .update(updateData)
@@ -116,11 +145,15 @@ export const updateEmployee = async (empNo, updateData) => {
  * @param {number | string} empNo - Employee number to soft delete
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const softDeleteEmployee = async (empNo) => {
+export const softDeleteEmployee = async (empNo, userId) => {
   try {
     const { data, error } = await supabase
       .from('employee')
-      .update({ record_status: 'INACTIVE' })
+      .update({
+        record_status: 'INACTIVE',
+        sepdate: todayISODate(),
+        stamp: makeStamp('DEACTIVATED', userId)
+      })
       .eq('empno', empNo)
       .select();
 
@@ -135,16 +168,90 @@ export const softDeleteEmployee = async (empNo) => {
 };
 
 /**
- * Recovers a deleted employee by setting record_status to 'ACTIVE'.
- * 
- * @param {number | string} empNo - Employee number to recover
- * @returns {Promise<{data: Object | null, error: null | Error}>}
+ * Builds a Map<empno, deptCode> by querying jobHistory directly.
+ * Picks the most recent deptCode per employee based on effDate.
+ * Security Logic: USER sees only ACTIVE jobHistory rows.
+ * ADMIN and SUPERADMIN see all rows, enabling department filtering for inactive employees.
+ *
+ * @param {string} userType - Type of user ('USER', 'ADMIN', 'SUPERADMIN')
+ * @returns {Promise<{data: Map<string, string> | null, error: null | Error}>}
  */
-export const recoverEmployee = async (empNo) => {
+export const getEmployeeDeptMap = async (userType) => {
+  try {
+    let query = supabase
+      .from('jobhistory')
+      .select('empno, deptcode, effdate');
+
+    if (userType === 'USER') {
+      query = query.eq('record_status', 'ACTIVE');
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const map = new Map();
+    for (const row of data || []) {
+      const existing = map.get(row.empno);
+      if (!existing || row.effdate > existing.effdate) {
+        map.set(row.empno, { effdate: row.effdate, deptcode: row.deptcode });
+      }
+    }
+
+    const deptMap = new Map();
+    for (const [empNo, val] of map) {
+      deptMap.set(empNo, val.deptcode);
+    }
+
+    return { data: deptMap, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
+ * Returns the next available employee number as a zero-padded VARCHAR(5) string.
+ * Fetches all empno values and derives the next integer in sequence.
+ * The field must be treated as auto-assigned and must not accept manual input.
+ *
+ * @returns {Promise<{data: string | null, error: null | Error}>}
+ */
+export const getNextEmpNo = async () => {
   try {
     const { data, error } = await supabase
       .from('employee')
-      .update({ record_status: 'ACTIVE' })
+      .select('empno');
+
+    if (error) throw error;
+
+    const max = (data || []).reduce((acc, row) => {
+      const n = parseInt(row.empno, 10);
+      return isNaN(n) ? acc : Math.max(acc, n);
+    }, 0);
+
+    return { data: String(max + 1).padStart(5, '0'), error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
+ * Recovers a deleted employee by setting record_status to 'ACTIVE'.
+ *
+ * @param {number | string} empNo - Employee number to recover
+ * @returns {Promise<{data: Object | null, error: null | Error}>}
+ */
+export const recoverEmployee = async (empNo, userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('employee')
+      .update({
+        record_status: 'ACTIVE',
+        sepdate: null,
+        stamp: makeStamp('REACTIVATED', userId)
+      })
       .eq('empno', empNo)
       .select();
 

@@ -15,8 +15,8 @@ export default function DeptModal({ isOpen, onClose, initialData = null, onSucce
   useEffect(() => {
     if (initialData) {
       setFormData({
-        code: initialData.deptCode || initialData.code || '',
-        name: initialData.deptName || initialData.name || '',
+        code: initialData.deptcode || '',
+        name: initialData.deptname || '',
         color: initialData.color || '#2E5BFF'
       });
     } else {
@@ -61,7 +61,7 @@ export default function DeptModal({ isOpen, onClose, initialData = null, onSucce
       let result;
       if (initialData) {
         // Update existing department
-        result = await updateDept(initialData.deptCode || initialData.code, {
+        result = await updateDept(initialData.deptcode, {
           deptName: formData.name,
           record_status: formData.record_status || 'ACTIVE'
         });

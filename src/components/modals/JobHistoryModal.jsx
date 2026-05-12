@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { addJobHistory, updateJobHistory } from '../../services/jobHistoryService';
+import { addJobHistory, updateJobHistory, getDeptCodeForJob } from '../../services/jobHistoryService';
 import { getJobs } from '../../services/jobService';
 import { getDepts } from '../../services/departmentService';
 
@@ -42,9 +42,9 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        jobCode: initialData.jobCode || '',
-        deptCode: initialData.deptCode || '',
-        effDate: initialData.effDate || '',
+        jobCode: initialData.jobcode || '',
+        deptCode: initialData.deptcode || '',
+        effDate: initialData.effdate || '',
         salary: initialData.salary?.toString() || ''
       });
     } else {
@@ -75,6 +75,15 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleJobChange = async (e) => {
+    const jobCode = e.target.value;
+    setFormData(prev => ({ ...prev, jobCode }));
+    if (jobCode) {
+      const { deptCode } = await getDeptCodeForJob(jobCode);
+      if (deptCode) setFormData(prev => ({ ...prev, deptCode }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -88,17 +97,17 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
       }
 
       const payload = {
-        emp_no: empNo,
-        jobCode: formData.jobCode,
-        deptCode: formData.deptCode,
-        effDate: formData.effDate,
+        empno: empNo,
+        jobcode: formData.jobCode,
+        deptcode: formData.deptCode,
+        effdate: formData.effDate,
         salary: formData.salary ? parseFloat(formData.salary) : null,
         record_status: 'ACTIVE'
       };
 
       let result;
-      if (initialData?.id) {
-        result = await updateJobHistory(initialData.id, payload);
+      if (initialData?.empno && initialData?.jobcode && initialData?.effdate) {
+        result = await updateJobHistory(initialData.empno, initialData.jobcode, initialData.effdate, payload);
       } else {
         result = await addJobHistory(payload);
       }
@@ -157,10 +166,10 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Job Title</label>
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">work</span>
-                <select 
+                <select
                   name="jobCode"
                   value={formData.jobCode}
-                  onChange={handleInputChange}
+                  onChange={handleJobChange}
                   className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-10 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none font-bold"
                   required
                 >
@@ -169,8 +178,8 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
                     <option disabled className="bg-[#1A1A24]">Loading...</option>
                   ) : (
                     jobs.map(job => (
-                      <option key={job.jobCode} value={job.jobCode} className="bg-[#1A1A24]">
-                        {job.jobDesc} ({job.jobCode})
+                      <option key={job.jobcode} value={job.jobcode} className="bg-[#1A1A24]">
+                        {job.jobdesc} ({job.jobcode})
                       </option>
                     ))
                   )}
@@ -196,8 +205,8 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
                     <option disabled className="bg-[#1A1A24]">Loading...</option>
                   ) : (
                     depts.map(dept => (
-                      <option key={dept.deptCode} value={dept.deptCode} className="bg-[#1A1A24]">
-                        {dept.deptName} ({dept.deptCode})
+                      <option key={dept.deptcode} value={dept.deptcode} className="bg-[#1A1A24]">
+                        {dept.deptname} ({dept.deptcode})
                       </option>
                     ))
                   )}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getEmployees } from '../services/employeeService';
 import { getDepts } from '../services/departmentService';
 import { getJobs } from '../services/jobService';
+import { getEmployeeCurrentJobById } from '../services/reportService';
 import { useRights } from '../context/UserRightsContext';
 
 /**
@@ -30,9 +31,13 @@ export default function Dashboard() {
           jobs: (jobRes.data || []).filter(j => j.record_status === 'ACTIVE').length,
           departments: (deptRes.data || []).filter(d => d.record_status === 'ACTIVE').length
         });
-        const sorted = [...employees].filter(e => e.hiredate)
+        const top3 = [...employees].filter(e => e.hiredate)
           .sort((a, b) => new Date(b.hiredate) - new Date(a.hiredate)).slice(0, 3);
-        setRecentEmployees(sorted);
+        const withJobs = await Promise.all(top3.map(async (emp) => {
+          const { data: job } = await getEmployeeCurrentJobById(emp.empno);
+          return { ...emp, job_title: job?.jobdesc || job?.job_desc || null, dept: job?.deptname || job?.dept_name || null };
+        }));
+        setRecentEmployees(withJobs);
       } catch (err) { console.error('Dashboard fetch error:', err); }
       finally { setLoading(false); }
     };
@@ -71,11 +76,9 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 lg:col-span-8 bg-[#1A1A24]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl">
+      <div className="bg-[#1A1A24]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl">
           <div className="flex justify-between items-center mb-10">
             <h3 className="text-2xl font-black text-white tracking-tight">Recent Hires</h3>
-            <button onClick={() => navigate('/employees')} className="text-[#2E5BFF] text-[10px] font-black uppercase tracking-[0.3em] hover:text-[#B71BCF] transition-colors">Full Directory →</button>
           </div>
           <div className="space-y-5">
             {loading ? [1,2,3].map(i => (
@@ -92,32 +95,13 @@ export default function Dashboard() {
                   <div className={`w-14 h-14 rounded-full shrink-0 ring-2 ring-white/10 ${c.glow} ${c.bg} flex items-center justify-center text-white font-black text-lg`}>{initials}</div>
                   <div className="flex-grow">
                     <h4 className="font-bold text-white text-lg tracking-tight">{emp.firstname} {emp.lastname}</h4>
-                    <p className="text-sm text-zinc-500 font-semibold">{emp.job_title || 'No title'} — {emp.dept || 'Unassigned'}</p>
+                    <p className="text-sm text-zinc-500 font-semibold">{emp.job_title || 'No designation'} — {emp.dept || 'Unassigned'}</p>
                   </div>
                   <span className={`${c.bg} text-white px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest uppercase shadow-lg`}>Hired {emp.hiredate}</span>
                 </div>
               );
             }) : <div className="text-center py-8"><p className="text-zinc-500 font-bold">No recent hires found.</p></div>}
           </div>
-        </div>
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-8">
-          <div className="bg-[#1A1A24]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-10 flex-grow shadow-2xl">
-            <h3 className="text-xl font-black text-white mb-8 tracking-tight">Quick Navigation</h3>
-            <div className="space-y-4">
-              {[{label:"Employees",path:"/employees",icon:"badge",color:"from-[#2E5BFF] to-[#00C2FF]"},{label:"Departments",path:"/departments",icon:"domain",color:"from-[#B71BCF] to-[#FF3DBC]"},{label:"Reports",path:"/reports",icon:"analytics",color:"from-[#8A3DFF] to-[#B71BCF]"}].map((item,i) => (
-                <button key={i} onClick={() => navigate(item.path)} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.07] transition-all text-left group">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-lg`}><span className="material-symbols-outlined text-lg" style={{fontVariationSettings:"'FILL' 1"}}>{item.icon}</span></div>
-                  <span className="text-sm font-black text-zinc-400 group-hover:text-white transition-colors uppercase tracking-widest">{item.label}</span>
-                  <span className="material-symbols-outlined text-zinc-700 ml-auto group-hover:text-white transition-colors">arrow_forward</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <button onClick={() => navigate('/employees')} className="bg-gradient-to-r from-[#2E5BFF] via-[#8A3DFF] to-[#B71BCF] text-white p-7 rounded-[2rem] flex items-center justify-between group shadow-[0_20px_40px_rgba(138,61,255,0.4)] hover:shadow-[0_25px_50px_rgba(138,61,255,0.6)] hover:-translate-y-1 active:translate-y-0.5 transition-all">
-            <span className="font-black text-xl tracking-tight">View Employees</span>
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform"><span className="material-symbols-outlined text-2xl">arrow_forward</span></div>
-          </button>
-        </div>
       </div>
     </div>
   );

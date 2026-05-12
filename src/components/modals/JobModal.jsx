@@ -1,29 +1,39 @@
 import { useState, useEffect } from 'react';
 import { addJob, updateJob } from '../../services/jobService';
+import { getDepts } from '../../services/departmentService';
 
-export default function JobModal({ isOpen, onClose, initialData = null, onSuccess }) {
+export default function JobModal({ isOpen, onClose, initialData = null, onSuccess, userRole = 'USER' }) {
   const [formData, setFormData] = useState({
     code: '',
     desc: '',
-    record_status: 'ACTIVE'
+    record_status: 'ACTIVE',
+    defaultdeptcode: ''
   });
 
+  const [depts, setDepts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getDepts(userRole).then(({ data }) => setDepts(data || []));
+  }, [isOpen, userRole]);
 
   // Populate form when initialData changes
   useEffect(() => {
     if (initialData) {
       setFormData({
-        code: initialData.jobCode || initialData.code || '',
-        desc: initialData.jobDesc || initialData.desc || '',
-        record_status: initialData.record_status || 'ACTIVE'
+        code: initialData.jobcode || '',
+        desc: initialData.jobdesc || '',
+        record_status: initialData.record_status || 'ACTIVE',
+        defaultdeptcode: ''
       });
     } else {
       setFormData({
         code: '',
         desc: '',
-        record_status: 'ACTIVE'
+        record_status: 'ACTIVE',
+        defaultdeptcode: ''
       });
     }
   }, [initialData, isOpen]);
@@ -61,16 +71,14 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
 
       let result;
       if (initialData) {
-        // Update existing job
-        result = await updateJob(initialData.jobCode || initialData.code, {
-          jobDesc: formData.desc,
+        result = await updateJob(initialData.jobcode, {
+          jobdesc: formData.desc,
           record_status: formData.record_status
         });
       } else {
-        // Create new job
         result = await addJob({
-          jobCode: formData.code,
-          jobDesc: formData.desc,
+          jobcode: formData.code,
+          jobdesc: formData.desc,
           record_status: formData.record_status
         });
       }
@@ -78,7 +86,7 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
       if (result.error) {
         setError(result.error.message || 'Failed to save job');
       } else {
-        onSuccess?.(result.data);
+        onSuccess?.(result.data, formData.defaultdeptcode);
         onClose();
       }
     } catch (err) {
@@ -146,6 +154,27 @@ export default function JobModal({ isOpen, onClose, initialData = null, onSucces
               onChange={handleInputChange}
               required
             />
+          </div>
+
+          {/* Default Department */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">Default Department (Optional)</label>
+            <div className="relative group">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary/50 text-xl group-focus-within:text-primary transition-colors">domain</span>
+              <select
+                className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none font-bold appearance-none [color-scheme:dark]"
+                name="defaultdeptcode"
+                value={formData.defaultdeptcode}
+                onChange={handleInputChange}
+              >
+                <option value="">Select a department...</option>
+                {depts.filter(d => d.record_status === 'ACTIVE').map(d => (
+                  <option key={d.deptcode} value={d.deptcode}>
+                    {d.deptcode} — {d.deptname}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Record Status Toggle */}

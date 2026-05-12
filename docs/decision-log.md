@@ -89,16 +89,66 @@ Record major HopeHRS project decisions here.
   - DB verification PR must call out the conflict.
   - Final documentation should not silently change either source.
 
+### Decision 7: Admin Employee Status Authority Split
+
+- Date: 2026-05-10
+- Owner: Team
+- Status: Accepted
+- Context: Task directive requires ADMIN and SUPERADMIN to edit employee active or inactive status within the Admin Panel Employees tab. AGENTS.md prohibits ADMIN from soft-deleting HR records.
+- Options Considered: Grant both roles full deactivate and reactivate authority; restrict deactivation to SUPERADMIN only; block status changes from ADMIN entirely.
+- Decision: SUPERADMIN retains exclusive authority to deactivate employees (set record_status to INACTIVE). ADMIN is granted authority to reactivate employees (set record_status to ACTIVE) within the Admin Panel Employees tab.
+- Reason: Complies with AGENTS.md "ADMIN can recover where allowed" clause without violating the non-negotiable soft-delete security rule that limits deactivation to SUPERADMIN.
+- Impact:
+  - Admin.jsx gates the Deactivate button to SUPERADMIN only.
+  - ADMIN sees a Reactivate button for INACTIVE employees only.
+  - No change to RLS policies required; existing softDeleteEmployee and recoverEmployee service functions enforce role checks via Supabase RLS on the backend.
+
+### Decision 8: Google OAuth as Exclusive Authentication Method
+
+- Date: 2026-05-10
+- Owner: Team
+- Status: Accepted per task directive
+- Context: The system directives explicitly require all users to authenticate exclusively using Google OAuth, removing the email/password sign-in path from the login page.
+- Options Considered: Keep both methods; remove email/password UI only; disable email auth at Supabase level.
+- Decision: Remove email input, password input, and the email/password submit handler from Login.jsx. Retain Google OAuth as the only sign-in mechanism. The /register route remains as a safe redirect to /login.
+- Reason: Task directive overrides MVP.md which listed email/password as a feature. The inactive-user gate in AuthContext.jsx continues to block unapproved OAuth users.
+- Impact:
+  - Existing ACTIVE users provisioned via email/password no longer have a UI sign-in path. They must authenticate via Google OAuth using the same email address, or be re-provisioned by SUPERADMIN.
+  - No Supabase Auth provider configuration changes are required; Google OAuth was already the working auth flow.
+  - This deviates from MVP.md and ACCEPTANCE_CRITERIA.md which both list email/password as a feature.
+
+### Decision 9: Stamp Format, Audit Log Removal, and Sepdate Auto-Soft-Delete
+
+- Date: 2026-05-11
+- Owner: Team
+- Status: Accepted per task directive
+- Context: The directive mandates new audit-stamp formats (`DEACTIVATED`, `REACTIVATED`, `CASCADE-DEL <empno> <ts>`, `CASCADE-RECOVER <empno> <ts>`) stored in the existing `stamp varchar(60)` column on each HR table, and forbids any unified Log panel. The previous implementation inlined `DELETED by <userId> at <ISO>` strings and exposed them via an Admin Panel "Log" tab parsed by `getAuditLog()`.
+- Options Considered: keep the prior format and parser; widen the `stamp` column; replace the format and remove the Log tab.
+- Decision:
+  1. Add `src/utils/makeStamp.js` emitting `<ACTION> <actorShort8> <YYYY-MM-DDTHH:MM:SSZ>` (worst-case 47 chars, fits the 60-char column without alteration).
+  2. Cascade trigger renamed to `cascade_employee_soft_delete()` (migration 012); writes `CASCADE-DEL <empno> <ts>` and `CASCADE-RECOVER <empno> <ts>`.
+  3. Setting `sepdate` on an ACTIVE employee triggers a soft-delete in BOTH the service layer (`updateEmployee` in employeeService.js) AND a new BEFORE-UPDATE DB trigger (`sepdate_softdelete`, migration 012). The actual column is `sepdate` (not `sep_date`).
+  4. Remove `getAuditLog()` and the Admin Panel `Log` tab. Replace with three new tabs in Admin: `Deleted Employees`, `Deleted Jobs`, `Deleted Departments`, all backed by the shared `DeletedRecordsTable` component. `DeletedItemsPage` continues to handle Job History recovery and is refactored to reuse the same shared component.
+  5. The `stamp` column is rendered as a standard table column for ADMIN/SUPERADMIN only across `EmployeeListPage`, `JobListPage`, `DeptListPage`, `JobHistory`, and `JobHistoryPanel`. USER sees no `stamp` column anywhere.
+  6. The unified Add/Edit modal pattern (`JobModal`, `DeptModal`, `JobHistoryModal` switching mode via `initialData`) satisfies the "Add and Edit modals" requirement; no separate `AddJobModal`/`EditJobModal` files are introduced.
+  7. `Reports.jsx` is consolidated from 3 tabs into a single stacked layout with one `Export Combined Report PDF` button, served by `downloadCombinedReportsPDF()` in `reportService.js`.
+- Reason: Strict directive compliance, with a single audit string per record (no separate audit table) and no schema-width changes to the stamp column.
+- Impact:
+  - Migrations 012 and 013 must be applied; existing `DELETED by ... at ...` stamps remain on legacy rows but new writes use the new format.
+  - Existing Vitest expectation in `employeeService.test.js` updated to assert the new stamp prefix and the `sepdate` field changes.
+  - New tests: `makeStamp.test.js`, `sepdateAutoSoftDelete.test.js`, `cascadeAndProvision.sql.test.js`, `softDeleteVisibility.test.js`.
+  - The Admin Panel keeps its strict tab separation; `UserManagementPage` stays isolated and `DeletedItemsPage` remains the canonical Recovery Vault for Job History.
+
 ### Decision 6: Resolve ADMIN `ADM_USER` Conflict
 
-- Date:
+- Date: 2026-05-09
 - Owner: Team
-- Status: Open
+- Status: Resolved
 - Context: Sprint 3 requires Admin user management, but one rights matrix source lists `ADM_USER` as ADMIN = NO.
 - Options Considered: ADMIN has ADM_USER, only SUPERADMIN has ADM_USER, split activation from rights management
-- Decision: TODO: Team must decide before Admin Module implementation.
-- Reason: The app cannot implement consistent Admin UI and RLS without resolving this.
+- Decision: Only SUPERADMIN holds the ADM_USER right. ADMIN can access the Admin Panel but is denied the User Management tab. ADMIN can view the Employees tab and Log tab within the Admin Panel.
+- Reason: Restricting user role changes and activation to SUPERADMIN prevents privilege escalation by ADMIN accounts. ADMIN retains visibility into the workforce via the Employees tab without being able to modify user accounts or roles.
 - Impact:
-  - Admin route gating depends on this decision.
-  - UserManagementPage behavior depends on this decision.
-  - RLS for user management depends on this decision.
+  - Admin.jsx gates the Users tab to SUPERADMIN only. ADMIN sees Employees and Log tabs.
+  - RLS on the user table must allow SUPERADMIN to update user_type; ADMIN updates are blocked.
+  - UserManagementPage (Users tab) is inaccessible to ADMIN at the component level and must also be blocked by RLS.
