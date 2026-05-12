@@ -129,6 +129,7 @@ The layout follows a **Fixed-Fluid Hybrid** model optimized for desktop HR manag
 - **Sidebar Navigation:** A fixed-width left rail (260px) that acts as the primary anchor. It uses a slightly darker surface than the main content area to provide grounding.
 - **Enterprise Density:** A strict 4px grid is used. Padding inside components is kept tight (8px to 12px) to maximize information density for HR practitioners handling large datasets.
 - **Grid System:** A 12-column grid within the main content area, using 16px gutters. Large data tables should span the full 12 columns, while administrative cards typically occupy 3 or 4 columns.
+- **RBAC Layout Behavior:** Grid layouts scale dynamically based on the active user's role. For example, Admin views may allocate 8 columns (`lg:col-span-8`) for core modules and 4 columns (`lg:col-span-4`) for exclusive administrative widgets (e.g., Activity Logs). Standard user views will gracefully shift to expand the core module across all 12 columns.
 
 ## Elevation & Depth
 
@@ -151,7 +152,10 @@ The shape language is defined by "Soft Precision."
 
 - **Buttons:** Primary buttons use the Teal (#006666) with white text and a subtle outset shadow. Secondary buttons are the surface color with an outset shadow, shifting to inset when clicked.
 - **Inputs:** Text fields appear as "inset" wells by default. This creates a clear mental model that the field is a space to be filled. Use JetBrains Mono for input text.
-- **Cards:** Cards should not have borders. They are defined solely by their soft-raised elevation.
+- **Cards:** Cards should not have borders. They use semi-transparent surface containers (e.g., `bg-[rgba(255,255,255,0.84)]`) with soft inset/outset shadows (`shadow-inset`, `shadow-outset-soft`).
 - **Sidebar Items:** Active states use an inset shadow and a 4px teal vertical "indicator light" on the far left.
+- **Interactive List Elements:** Clickable or focusable list items (like Recent Hires or Activity Logs) utilize the `interactive-surface` class. To ensure high readability, lists utilize alternating backgrounds (`odd:bg-[rgba(255,255,255,0.96)] even:bg-[rgba(245,248,252,0.94)]`).
+- **Hover Effects:** Interactive items use `hover:-translate-y-0.5 hover:shadow-md hover:bg-white transition-all duration-200 cursor-pointer` to create responsive, tactile feedback when mousing over.
+- **Avatars & Icons:** Profile initials and standard icons are placed inside rounded containers with the `gradient-primary` class and `shadow-outset-soft`.
+- **Chips/Badges:** Small, pill-shaped elements (e.g., tags, dates) use a surface-container background with `shadow-inset` and uppercase monospace typography with wide tracking (`tracking-[0.24em]`) for technical emphasis.
 - **Data Tables:** Since neumorphism can be heavy, tables use flat rows with subtle 1px dividers. The "Table Header" can be a slightly raised surface to provide a tactile anchor for the data below.
-- **Chips/Badges:** Small, pill-shaped elements with very subtle inset shadows to look like embossed labels on a physical machine.
