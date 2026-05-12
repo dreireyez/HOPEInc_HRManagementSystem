@@ -78,10 +78,11 @@ export const getEmployee = async (empNo, userType) => {
         .maybeSingle(),
       supabase
         .from('jobhistory')
-        .select('empno, deptcode, effdate, salary, job:job(jobdesc), department:department(deptname)')
+        .select('empno, deptcode, effdate, created_at, salary, job:job(jobdesc), department:department(deptname)')
         .eq('empno', empNo)
         .eq('record_status', 'ACTIVE')
         .order('effdate', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
@@ -100,7 +101,7 @@ export const getEmployee = async (empNo, userType) => {
       const { data: leaderRows, error: leaderError } = await supabase
         .from('jobhistory')
         .select(
-          'empno, effdate, deptcode, jobcode, employee:employee(empno, firstname, lastname, record_status), job:job(jobcode, jobdesc)'
+          'empno, effdate, created_at, deptcode, jobcode, employee:employee(empno, firstname, lastname, record_status), job:job(jobcode, jobdesc)'
         )
         .eq('deptcode', latestJobRes.data.deptcode)
         .eq('record_status', 'ACTIVE');
@@ -120,7 +121,10 @@ export const getEmployee = async (empNo, userType) => {
           filtered.sort((a, b) => {
             const aDate = a.effdate ? new Date(a.effdate).getTime() : 0;
             const bDate = b.effdate ? new Date(b.effdate).getTime() : 0;
-            return bDate - aDate;
+            if (bDate !== aDate) return bDate - aDate;
+            const aCreated = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const bCreated = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return bCreated - aCreated;
           });
 
           return filtered[0];

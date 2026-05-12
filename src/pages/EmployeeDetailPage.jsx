@@ -140,7 +140,15 @@ export default function EmployeeDetailPage() {
                   <h2 className="font-sans text-[32px] leading-tight font-bold text-[var(--color-on-surface)] mb-1">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                  <p className="font-sans text-xl text-[var(--color-primary-container)] font-medium mb-4">{profile.role}</p>
+                  <div className="flex flex-wrap items-center gap-3 mb-4 justify-center md:justify-start">
+                    <p className="font-sans text-xl text-[var(--color-primary-container)] font-medium">{profile.role}</p>
+                    <div className="px-2.5 py-1 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_4px_rgba(12,31,56,0.03)] border border-[var(--color-outline-variant)]/10 flex items-center gap-1 cursor-default">
+                      <span className="material-symbols-outlined text-[12px] text-[var(--color-on-surface-variant)]">verified</span>
+                      <span className={`font-mono text-[9px] font-bold uppercase tracking-widest ${profile.status === 'Active' ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
+                        {profile.status}
+                      </span>
+                    </div>
+                  </div>
 
                   <div className="flex flex-wrap gap-3 mb-6 justify-center md:justify-start">
                     <Badge variant="default" className="flex items-center gap-2 px-3 py-1.5 h-8">
