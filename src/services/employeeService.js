@@ -13,7 +13,7 @@ export const getEmployees = async (userType) => {
     // Query 1: employee table (record_status, stamp, all HR fields)
     let empQuery = supabase
       .from('employee')
-      .select('empno, lastname, firstname, gender, hiredate, sepdate, record_status, stamp');
+      .select('empno, lastname, firstname, gender, birthdate, hiredate, sepdate, record_status, stamp');
 
     if (userType === 'USER') {
       empQuery = empQuery.eq('record_status', 'ACTIVE');
