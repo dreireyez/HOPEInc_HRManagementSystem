@@ -31,6 +31,38 @@ export const getEmployees = async (userType) => {
 };
 
 /**
+ * Fetches a single employee by employee number.
+ * Security Logic: 'USER' type can only see ACTIVE records.
+ * 
+ * @param {number | string} empNo - Employee number to fetch
+ * @param {string} userType - Type of user ('USER', 'ADMIN', 'SUPERADMIN')
+ * @returns {Promise<{data: Object | null, error: null | Error}>}
+ */
+export const getEmployee = async (empNo, userType) => {
+  try {
+    let query = supabase
+      .from('employee')
+      .select('*')
+      .eq('empno', empNo);
+
+    // Apply filter for regular users - only show ACTIVE records
+    if (userType === 'USER') {
+      query = query.eq('record_status', 'ACTIVE');
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+/**
  * Adds a new employee record to the database.
  * 
  * @param {Object} employeeData - Employee information to insert
@@ -65,7 +97,7 @@ export const updateEmployee = async (empNo, updateData) => {
     const { data, error } = await supabase
       .from('employee')
       .update(updateData)
-      .eq('emp_no', empNo)
+      .eq('empno', empNo)
       .select();
 
     if (error) {
@@ -89,7 +121,7 @@ export const softDeleteEmployee = async (empNo) => {
     const { data, error } = await supabase
       .from('employee')
       .update({ record_status: 'INACTIVE' })
-      .eq('emp_no', empNo)
+      .eq('empno', empNo)
       .select();
 
     if (error) {
@@ -113,7 +145,7 @@ export const recoverEmployee = async (empNo) => {
     const { data, error } = await supabase
       .from('employee')
       .update({ record_status: 'ACTIVE' })
-      .eq('emp_no', empNo)
+      .eq('empno', empNo)
       .select();
 
     if (error) {
