@@ -614,18 +614,17 @@ export default function JobHistory() {
                     )}
 
                     {canSeeAllStatuses && (
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center justify-center text-center">
                         {(() => {
-                          if (!item.stamp) return <span className="font-mono text-[11px] text-slate-400">—</span>;
-                          const raw = String(item.stamp).trim();
-                          const dateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
-                          const datePart = dateMatch ? dateMatch[1] : raw;
-                          const timePart = dateMatch ? raw.slice(dateMatch[1].length).trim() : '';
+                          const stampStr = item.stamp || '';
+                          const spaceIdx = stampStr.indexOf(' ');
+                          const datePart = spaceIdx === -1 ? stampStr : stampStr.substring(0, spaceIdx);
+                          const timePart = spaceIdx === -1 ? '' : stampStr.substring(spaceIdx + 1);
                           
                           return (
                             <>
                               <span className="font-mono text-[11px] font-bold text-[#3f4948] leading-tight">
-                                {datePart}
+                                {datePart || '—'}
                               </span>
                               {timePart && (
                                 <span className="font-mono text-[9px] font-medium text-[#6f7979] mt-0.5 leading-tight">
@@ -634,7 +633,7 @@ export default function JobHistory() {
                               )}
                             </>
                           );
-                        })()}
+                        })() || '—'}
                       </div>
                     )}
 

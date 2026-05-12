@@ -118,8 +118,6 @@ export default function EmployeeDetailPage() {
               <div className="absolute top-0 left-0 w-2 h-full bg-[var(--color-primary-container)]"></div>
 
               <div className="relative shrink-0 mx-auto md:mx-0">
-                {/* Initials avatar — no external image dependency */}
-                {/* Initials avatar using Badge component */}
                 <Badge 
                   variant="primary" 
                   className="!w-24 !h-24 !text-4xl !p-0 !flex !items-center !justify-center !shadow-outset shrink-0 select-none !font-black !tracking-normal !leading-none"
