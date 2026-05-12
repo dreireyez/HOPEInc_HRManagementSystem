@@ -4,6 +4,7 @@ import JobHistoryPanel from '../components/JobHistoryPanel';
 import { getEmployee } from '../services/employeeService';
 import { useRights } from '../context/UserRightsContext';
 import EditEmployeeModal from '../components/modals/EditEmployeeModal';
+import { Badge } from '../components/ui/Badge';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
@@ -117,13 +118,18 @@ export default function EmployeeDetailPage() {
               <div className="absolute top-0 left-0 w-2 h-full bg-[var(--color-primary-container)]"></div>
 
               <div className="relative shrink-0 mx-auto md:mx-0">
-                <div className="w-32 h-32 rounded-full shadow-inset p-2 border-4 border-[var(--color-surface)] bg-[var(--color-surface-dim)]">
-                  <img
-                    alt="Employee portrait"
-                    className="w-full h-full rounded-full object-cover shadow-inner grayscale-[10%]"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIykD8PTYcxDgvvQT3-xzyhg9iuk7PRsWeqHVYo1RAvfcy3PQ-IujbJ9Hw4BKNdOOEn6jNxCYdxyaO0nFkcsEJIqVEBLiYzaIE3p7SN1ZYNDPlF1x9Bu0QOyFe4_7XzK5KG92sPqFgSf8IHv_RN44n9Q0A77RoUUv8XX8UUuZZhdg4EG75KgL9NZ5ewYQGErN5boiq0OGcKj3YhCWKaK2YKi-UH6ObCammwWqaLYPDjSul0BG8eCp6Ez1Dwe4AWk1JVn1fFyXtHoqa"
-                  />
-                </div>
+                {/* Initials avatar — no external image dependency */}
+                {/* Initials avatar using Badge component */}
+                <Badge 
+                  variant="primary" 
+                  className="!w-24 !h-24 !text-4xl !p-0 !flex !items-center !justify-center !shadow-outset shrink-0 select-none !font-black !tracking-normal !leading-none"
+                >
+                  {`${profile.firstName} ${profile.lastName}`
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()}
+                </Badge>
                 <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-[var(--color-surface)] shadow-outset flex items-center justify-center">
                   <div className={`w-3 h-3 rounded-full shadow-[inset_1px_1px_2px_rgba(0,0,0,0.2)] ${profile.status === 'Active' ? 'bg-[#15803d]' : 'bg-[#ba1a1a]'}`}></div>
                 </div>
@@ -144,43 +150,44 @@ export default function EmployeeDetailPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2.5 mb-2 mt-auto justify-center md:justify-start">
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_8px_rgba(12,31,56,0.04)] border border-[var(--color-outline-variant)]/10 flex items-center gap-1.5 transition-transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(12,31,56,0.06)] cursor-default">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">domain</span>
-                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">{profile.dept}</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_8px_rgba(12,31,56,0.04)] border border-[var(--color-outline-variant)]/10 flex items-center gap-1.5 transition-transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(12,31,56,0.06)] cursor-default">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">badge</span>
-                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">EMP-{profile.empNo}</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_8px_rgba(12,31,56,0.04)] border border-[var(--color-outline-variant)]/10 flex items-center gap-2 transition-transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(12,31,56,0.06)] cursor-default">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">supervisor_account</span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-[9px] font-semibold text-[var(--color-on-surface-variant)] uppercase tracking-widest">Manager:</span>
-                        <span className="font-sans text-[11px] font-bold text-[var(--color-on-surface)]">{profile.manager}</span>
-                      </div>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_8px_rgba(12,31,56,0.04)] border border-[var(--color-outline-variant)]/10 flex items-center gap-2 transition-transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(12,31,56,0.06)] cursor-default">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">event</span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-[9px] font-semibold text-[var(--color-on-surface-variant)] uppercase tracking-widest">Hire Date:</span>
-                        <span className="font-sans text-[11px] font-bold text-[var(--color-on-surface)]">{profile.joined}</span>
-                      </div>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_8px_rgba(12,31,56,0.04)] border border-[var(--color-outline-variant)]/10 flex items-center gap-2 transition-transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(12,31,56,0.06)] cursor-default">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">person</span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-[9px] font-semibold text-[var(--color-on-surface-variant)] uppercase tracking-widest">Gender:</span>
-                        <span className="font-sans text-[11px] font-bold text-[var(--color-on-surface)]">{profile.gender}</span>
-                      </div>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface-bright)] shadow-[0_2px_8px_rgba(12,31,56,0.04)] border border-[var(--color-outline-variant)]/10 flex items-center gap-2 transition-transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(12,31,56,0.06)] cursor-default">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">cake</span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-[9px] font-semibold text-[var(--color-on-surface-variant)] uppercase tracking-widest">Birth:</span>
-                        <span className="font-sans text-[11px] font-bold text-[var(--color-on-surface)]">{profile.birthdate}</span>
-                      </div>
-                    </div>
+                  <div className="flex flex-wrap gap-3 mb-6 justify-center md:justify-start">
+                    <Badge variant="default" className="flex items-center gap-2 px-3 py-1.5 h-8">
+                      <span className="material-symbols-outlined text-[14px]">domain</span>
+                      {profile.dept}
+                    </Badge>
+                    <Badge variant="default" className="flex items-center gap-2 px-3 py-1.5 h-8">
+                      <span className="material-symbols-outlined text-[14px]">badge</span>
+                      EMP-{profile.empNo}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap md:flex-nowrap gap-6 border-t border-[var(--color-outline-variant)]/20 pt-5 mt-auto w-full justify-center md:justify-start">
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Direct Manager</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.manager}</p>
+                  </div>
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Hire Date</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.joined}</p>
+                  </div>
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Gender</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.gender}</p>
+                  </div>
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Birth Date</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.birthdate}</p>
+                  </div>
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Record Status</p>
+                    <Badge variant={profile.status === 'Active' ? 'success' : 'error'}>
+                      {profile.status}
+                    </Badge>
                   </div>
                 </div>
               </div>
