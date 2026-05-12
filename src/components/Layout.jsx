@@ -45,13 +45,13 @@ export default function Layout() {
           >
             <div className="sidebar-brand-mark gradient-primary flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-outset-soft">
               <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                fluid
+                assured_workload
               </span>
             </div>
             <div>
-              <div className="text-lg font-bold tracking-tight">HopeHRS</div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-[var(--color-on-surface-variant)]">
-                HR Management
+              <div className="font-sans font-bold tracking-tight text-xl text-[#181c1c]">Hope, Inc.</div>
+              <div className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-[#3f4948]">
+                HR Management System
               </div>
             </div>
           </button>
@@ -62,10 +62,9 @@ export default function Layout() {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold animate-in fade-in slide-in-from-left-2 ${
-                    isActive
-                      ? 'gradient-primary text-white shadow-outset-soft'
-                      : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
+                  `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold animate-in fade-in slide-in-from-left-2 ${isActive
+                    ? 'gradient-primary text-white shadow-outset-soft'
+                    : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
                   }`
                 }
                 style={{ animationDelay: `${index * 45}ms` }}
@@ -73,14 +72,12 @@ export default function Layout() {
                 {({ isActive }) => (
                   <>
                     <span
-                      className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${
-                        isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
-                      }`}
+                      className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
+                        }`}
                     />
                     <span
-                      className={`nav-item-icon material-symbols-outlined text-[20px] transition-transform duration-[var(--motion-fast)] ${
-                        isActive ? 'scale-110' : 'group-hover:scale-105'
-                      }`}
+                      className={`nav-item-icon material-symbols-outlined text-[20px] transition-transform duration-[var(--motion-fast)] ${isActive ? 'scale-110' : 'group-hover:scale-105'
+                        }`}
                     >
                       {item.icon}
                     </span>
@@ -95,19 +92,17 @@ export default function Layout() {
                 <NavLink
                   to="/admin"
                   className={({ isActive }) =>
-                    `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
-                      isActive
-                        ? 'gradient-primary text-white shadow-outset-soft'
-                        : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
+                    `nav-item-surface flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${isActive
+                      ? 'gradient-primary text-white shadow-outset-soft'
+                      : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)] hover:shadow-outset-soft'
                     }`
                   }
                 >
                   {({ isActive }) => (
                     <>
                       <span
-                        className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${
-                          isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
-                        }`}
+                        className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-[var(--color-primary-container)] transition-all duration-[var(--motion-base)] ${isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
+                          }`}
                       />
                       <span className="nav-item-icon material-symbols-outlined text-[20px]">admin_panel_settings</span>
                       <span className="nav-item-label">Admin</span>
@@ -147,19 +142,17 @@ export default function Layout() {
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `nav-item-surface relative flex h-full min-w-0 flex-1 flex-col items-center justify-center rounded-2xl ${
-                  isActive
-                    ? 'gradient-primary text-white shadow-outset-soft'
-                    : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)]'
+                `nav-item-surface relative flex h-full min-w-0 flex-1 flex-col items-center justify-center rounded-2xl ${isActive
+                  ? 'gradient-primary text-white shadow-outset-soft'
+                  : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-bright)] hover:text-[var(--color-on-surface)]'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   <span
-                    className={`absolute top-1 h-1.5 w-8 rounded-full bg-[var(--color-primary-container)] transition-transform duration-[var(--motion-base)] ${
-                      isActive ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
-                    }`}
+                    className={`absolute top-1 h-1.5 w-8 rounded-full bg-[var(--color-primary-container)] transition-transform duration-[var(--motion-base)] ${isActive ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+                      }`}
                   />
                   <span className={`material-symbols-outlined text-[22px] transition-transform duration-[var(--motion-fast)] ${isActive ? '-translate-y-0.5' : ''}`}>
                     {item.icon}
