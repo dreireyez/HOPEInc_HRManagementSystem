@@ -16,6 +16,18 @@ import JobHistoryModal from '../components/modals/JobHistoryModal';
 
 const PAGE_SIZE = 10;
 
+/** Sort presets for the unified Sort By dropdown. */
+const SORT_OPTIONS = [
+  { label: 'Eff. Date (Newest)',  field: 'effdate',  dir: 'desc' },
+  { label: 'Eff. Date (Oldest)',  field: 'effdate',  dir: 'asc'  },
+  { label: 'Employee ID (Asc)',   field: 'empno',    dir: 'asc'  },
+  { label: 'Employee ID (Desc)',  field: 'empno',    dir: 'desc' },
+  { label: 'Job Code (A–Z)',      field: 'jobcode',  dir: 'asc'  },
+  { label: 'Dept Code (A–Z)',     field: 'deptcode', dir: 'asc'  },
+  { label: 'Salary (High–Low)',   field: 'salary',   dir: 'desc' },
+  { label: 'Salary (Low–High)',   field: 'salary',   dir: 'asc'  },
+];
+
 export default function JobHistory() {
   const { can, currentUser } = useRights();
   const toast = useToast();
@@ -181,17 +193,12 @@ export default function JobHistory() {
     fetchAll();
   };
 
-  const toggleSort = (field) => {
-    if (sortField === field) {
-      setSortDir((d) =>
-        d === 'asc'
-          ? 'desc'
-          : 'asc'
-      );
-    } else {
-      setSortField(field);
-      setSortDir('asc');
-    }
+  const sortKey = `${sortField}__${sortDir}`;
+
+  const handleSortChange = (e) => {
+    const [field, dir] = e.target.value.split('__');
+    setSortField(field);
+    setSortDir(dir);
   };
 
   const filtered = history
@@ -316,370 +323,151 @@ export default function JobHistory() {
       currentPage * PAGE_SIZE
     );
 
-  const SortIcon = ({
-    field,
-  }) => (
-    <span
-      className={`material-symbols-outlined text-[14px] transition-all duration-200 ${sortField === field
-          ? 'text-[#1e3a5f]'
-          : 'text-slate-300'
-        }`}
-    >
-      {sortField === field
-        ? sortDir === 'asc'
-          ? 'north'
-          : 'south'
-        : 'unfold_more'}
-    </span>
-  );
 
   const selectCls = `
-    bg-white
-    rounded-xl
-    border border-slate-200
-    px-3 py-2.5
-    text-sm
-    font-medium
-    text-slate-700
-    outline-none
-    transition-all duration-200
-    hover:border-slate-300
+    w-full bg-white rounded-xl border border-slate-200 pl-3 pr-8 py-2.5
+    text-sm font-medium text-slate-700 outline-none appearance-none
+    transition-all duration-200 hover:border-slate-300
     hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
-    focus:ring-2
-    focus:ring-[#1e3a5f]/20
-    focus:border-[#1e3a5f]
+    focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]
   `;
+
+  /** Shared chevron wrapper — chevron centred inside the select field. */
+  const SelectWrap = ({ children, className = '' }) => {
+    const kids = Array.isArray(children) ? children : [children];
+    return (
+      <div className={`flex flex-col gap-1 ${className}`}>
+        {kids[0]}
+        <div className="relative">
+          {kids.slice(1)}
+          <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-400">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  /** Flat mono column header — matches Employees table style. */
+  const ColHeader = ({ label, align = 'left' }) => (
+    <div className={`font-mono uppercase text-[#3f4948] font-medium tracking-[0.05em] text-xs ${
+      align === 'center' ? 'text-center' : 'text-left'
+    }`}>{label}</div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      {/* FILTERS */}
-      <div
-        className="
-          relative
-          rounded-[1.8rem]
-          px-5 pt-4 pb-3
-          flex flex-col gap-3
-          border border-slate-100
-          shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]
-          hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)]
-          hover:-translate-y-0.5
-          transition-all duration-300
-          bg-white
-        "
-      >
-        <div className="flex flex-wrap items-end gap-4">
-          {/* SEARCH */}
-          <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
-            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
-              Search
-            </label>
+      {/* PAGE HEADER */}
+      <header className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Job History</h1>
+          <p className="text-sm text-slate-500 mt-1">Full employment history records across all employees.</p>
+        </div>
+      </header>
 
+      {/* FILTER + SORT BY — unified control panel */}
+      <div className="relative rounded-[1.8rem] px-5 pt-4 pb-3 flex flex-col gap-3 border border-slate-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)] hover:-translate-y-0.5 transition-all duration-300 bg-white">
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Search */}
+          <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Search</label>
             <input
               type="text"
               placeholder="Employee, job, or department"
               value={searchQuery}
-              onChange={(e) =>
-                setSearchQuery(
-                  e.target.value
-                )
-              }
-              className="
-                bg-white
-                rounded-xl
-                border border-slate-200
-                px-4 py-3
-                text-sm
-                font-medium
-                text-slate-700
-                outline-none
-                transition-all duration-200
-                hover:border-slate-300
-                hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
-                focus:ring-2
-                focus:ring-[#1e3a5f]/20
-                focus:border-[#1e3a5f]
-              "
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]"
             />
           </div>
 
-          {/* JOB FILTER */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
-              Job
-            </label>
-
-            <select
-              value={jobFilter}
-              onChange={(e) =>
-                setJobFilter(
-                  e.target.value
-                )
-              }
-              className={selectCls}
-            >
-              <option value="ALL">
-                All jobs
-              </option>
-
-              {[
-                ...new Set(
-                  history.map((i) =>
-                    f(
-                      i,
-                      'jobCode',
-                      'job_code'
-                    )
-                  )
-                ),
-              ]
-                .filter(Boolean)
-                .sort()
-                .map((job) => (
-                  <option
-                    key={job}
-                    value={job}
-                  >
-                    {job}
-                  </option>
-                ))}
+          {/* Job Filter */}
+          <SelectWrap className="flex-1 min-w-[130px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Job Code</label>
+            <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className={selectCls}>
+              <option value="ALL">All jobs</option>
+              {[...new Set(history.map((i) => f(i, 'jobCode', 'job_code')))]
+                .filter(Boolean).sort()
+                .map((job) => <option key={job} value={job}>{job}</option>)}
             </select>
-          </div>
+          </SelectWrap>
 
-          {/* DEPARTMENT FILTER */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
-              Department
-            </label>
-
-            <select
-              value={deptFilter}
-              onChange={(e) =>
-                setDeptFilter(
-                  e.target.value
-                )
-              }
-              className={selectCls}
-            >
-              <option value="ALL">
-                All departments
-              </option>
-
-              {[
-                ...new Set(
-                  history.map((i) =>
-                    f(
-                      i,
-                      'deptCode',
-                      'dept_code'
-                    )
-                  )
-                ),
-              ]
-                .filter(Boolean)
-                .sort()
-                .map((dept) => (
-                  <option
-                    key={dept}
-                    value={dept}
-                  >
-                    {dept}
-                  </option>
-                ))}
+          {/* Department Filter */}
+          <SelectWrap className="flex-1 min-w-[130px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Department</label>
+            <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className={selectCls}>
+              <option value="ALL">All depts</option>
+              {[...new Set(history.map((i) => f(i, 'deptCode', 'dept_code')))]
+                .filter(Boolean).sort()
+                .map((dept) => <option key={dept} value={dept}>{dept}</option>)}
             </select>
-          </div>
+          </SelectWrap>
 
-          {/* STATUS */}
+          {/* Status — admin only */}
           {canSeeAllStatuses && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
-                Status
-              </label>
-
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value
-                  )
-                }
-                className={selectCls}
-              >
-                <option value="ALL">
-                  All
-                </option>
-
-                <option value="ACTIVE">
-                  Active
-                </option>
-
-                <option value="INACTIVE">
-                  Inactive
-                </option>
+            <SelectWrap className="flex-1 min-w-[110px]">
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Status</label>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+                <option value="ALL">All</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
               </select>
-            </div>
+            </SelectWrap>
           )}
 
-          {/* COUNT */}
-          <div className="ml-auto">
-            <div
-              className="
-                bg-slate-100
-                rounded-full
-                px-4 py-2
-                text-[12px]
-                font-semibold
-                text-slate-500
-                border border-slate-200
-              "
-            >
-              {filtered.length} result
-              {filtered.length !== 1
-                ? 's'
-                : ''}
+          {/* Sort By */}
+          <SelectWrap className="flex-1 min-w-[160px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Sort By</label>
+            <select value={sortKey} onChange={handleSortChange} className={selectCls}>
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.field}__${opt.dir}`} value={`${opt.field}__${opt.dir}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </SelectWrap>
+
+          {/* Results pill */}
+          <div className="flex items-end shrink-0">
+            <div className="bg-slate-100 rounded-full px-4 py-2.5 text-[12px] font-semibold text-slate-500 border border-slate-200 whitespace-nowrap">
+              {filtered.length} result{filtered.length !== 1 ? 's' : ''}
             </div>
           </div>
         </div>
 
-        {/* ACTIVE FILTERS */}
-        {(searchQuery ||
-          statusFilter !== 'ALL' ||
-          jobFilter !== 'ALL' ||
-          deptFilter !== 'ALL') && (
-            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold mr-1">
-                Filters
-              </span>
-
-              {searchQuery && (
-                <button
-                  onClick={() =>
-                    setSearchQuery('')
-                  }
-                  className="
-                  inline-flex items-center gap-1.5
-                  rounded-full
-                  bg-[#1e3a5f]/10
-                  text-[#1e3a5f]
-                  border border-[#1e3a5f]/10
-                  px-3 py-1.5
-                  text-xs
-                  font-semibold
-                  hover:bg-[#1e3a5f]/15
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-                >
-                  "{searchQuery}"
-                  <span className="opacity-60">
-                    ×
-                  </span>
-                </button>
-              )}
-
-              {jobFilter !== 'ALL' && (
-                <button
-                  onClick={() =>
-                    setJobFilter('ALL')
-                  }
-                  className="
-                  inline-flex items-center gap-1.5
-                  rounded-full
-                  bg-slate-100
-                  text-slate-600
-                  border border-slate-200
-                  px-3 py-1.5
-                  text-xs
-                  font-semibold
-                  hover:bg-slate-200
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-                >
-                  {jobFilter}
-                  <span className="opacity-60">
-                    ×
-                  </span>
-                </button>
-              )}
-
-              {deptFilter !== 'ALL' && (
-                <button
-                  onClick={() =>
-                    setDeptFilter('ALL')
-                  }
-                  className="
-                  inline-flex items-center gap-1.5
-                  rounded-full
-                  bg-slate-100
-                  text-slate-600
-                  border border-slate-200
-                  px-3 py-1.5
-                  text-xs
-                  font-semibold
-                  hover:bg-slate-200
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-                >
-                  {deptFilter}
-                  <span className="opacity-60">
-                    ×
-                  </span>
-                </button>
-              )}
-
-              {statusFilter !== 'ALL' && (
-                <button
-                  onClick={() =>
-                    setStatusFilter(
-                      'ALL'
-                    )
-                  }
-                  className="
-                  inline-flex items-center gap-1.5
-                  rounded-full
-                  bg-slate-100
-                  text-slate-600
-                  border border-slate-200
-                  px-3 py-1.5
-                  text-xs
-                  font-semibold
-                  hover:bg-slate-200
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-                >
-                  {statusFilter}
-                  <span className="opacity-60">
-                    ×
-                  </span>
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter(
-                    'ALL'
-                  );
-                  setJobFilter('ALL');
-                  setDeptFilter(
-                    'ALL'
-                  );
-                }}
-                className="
-                text-[11px]
-                font-semibold
-                text-slate-400
-                hover:text-red-500
-                transition-colors
-                ml-1
-              "
-              >
-                Clear all
+        {/* ACTIVE FILTER CHIPS */}
+        {(searchQuery || statusFilter !== 'ALL' || jobFilter !== 'ALL' || deptFilter !== 'ALL') && (
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold mr-1">Filters</span>
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="inline-flex items-center gap-1.5 rounded-full bg-[#1e3a5f]/10 text-[#1e3a5f] border border-[#1e3a5f]/10 px-3 py-1.5 text-xs font-semibold hover:bg-[#1e3a5f]/15 hover:-translate-y-0.5 transition-all duration-200">
+                "{searchQuery}" <span className="opacity-60">×</span>
               </button>
-            </div>
-          )}
+            )}
+            {jobFilter !== 'ALL' && (
+              <button onClick={() => setJobFilter('ALL')} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 hover:-translate-y-0.5 transition-all duration-200">
+                {jobFilter} <span className="opacity-60">×</span>
+              </button>
+            )}
+            {deptFilter !== 'ALL' && (
+              <button onClick={() => setDeptFilter('ALL')} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 hover:-translate-y-0.5 transition-all duration-200">
+                {deptFilter} <span className="opacity-60">×</span>
+              </button>
+            )}
+            {statusFilter !== 'ALL' && (
+              <button onClick={() => setStatusFilter('ALL')} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 hover:-translate-y-0.5 transition-all duration-200">
+                {statusFilter} <span className="opacity-60">×</span>
+              </button>
+            )}
+            <button
+              onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); setJobFilter('ALL'); setDeptFilter('ALL'); }}
+              className="text-[11px] font-semibold text-slate-400 hover:text-red-500 transition-colors ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
       {/* ERROR */}
       {error && (
@@ -697,68 +485,23 @@ export default function JobHistory() {
         <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-[0_4px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="flex flex-col gap-3">
 
-            {/* HEADER */}
+            {/* TABLE HEADER — flat mono labels, consistent with Employees page */}
             <div
-              className={`
-          grid items-center gap-4 px-4 py-2
-          ${canSeeAllStatuses
+              className={`grid items-center gap-4 px-4 pt-3 pb-4 border-b border-[#bec9c8]/50 ${
+                canSeeAllStatuses
                   ? 'grid-cols-[1.1fr_1fr_1fr_1.3fr_1.1fr_120px_140px_60px]'
                   : canManageRows
                     ? 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr_60px]'
                     : 'grid-cols-[1.3fr_1.2fr_1.2fr_1.5fr_1.3fr]'
-                }
-        `}
+              }`}
             >
-              {[
-                ['empno', 'Employee'],
-                ['jobcode', 'Job'],
-                ['deptcode', 'Department'],
-                ['effdate', 'Effective'],
-                ['salary', 'Salary'],
-              ].map(([field, label]) => (
-                <button
-                  key={field}
-                  onClick={() =>
-                    toggleSort(field)
-                  }
-                  className="
-              inline-flex items-center gap-1
-              text-[11px]
-              font-mono
-              font-bold
-              uppercase
-              tracking-[0.18em]
-              text-slate-500
-              hover:text-slate-800
-              bg-slate-50
-              hover:bg-slate-100
-              border border-slate-200
-              rounded-full
-              px-3 py-1.5
-              transition-all duration-200
-              hover:-translate-y-0.5
-              hover:shadow-[0_8px_18px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.05)]
-              shadow-[0_4px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]
-              w-fit
-            "
-                >
-                  {label}
-                  <SortIcon field={field} />
-                </button>
-              ))}
-
-              {canSeeAllStatuses && (
-                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
-                  Status
-                </div>
-              )}
-
-              {canSeeAllStatuses && (
-                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
-                  Stamp
-                </div>
-              )}
-
+              <ColHeader label="Emp. ID" />
+              <ColHeader label="Job Code" />
+              <ColHeader label="Dept Code" />
+              <ColHeader label="Eff. Date" align="center" />
+              <ColHeader label="Salary" />
+              {canSeeAllStatuses && <ColHeader label="Status" align="center" />}
+              {canSeeAllStatuses && <ColHeader label="Stamp" align="center" />}
               {canManageRows && <div />}
             </div>
 
@@ -821,7 +564,7 @@ export default function JobHistory() {
                       )}
                     </div>
 
-                    <div className="font-mono text-[13px] text-slate-600">
+                    <div className="font-mono text-[13px] text-slate-600 flex justify-center">
                       {new Date(
                         f(
                           item,
@@ -857,7 +600,7 @@ export default function JobHistory() {
 
                     {canSeeAllStatuses && (
                       <div className="text-center">
-                        <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[100px] block">
+                        <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[100px] block mx-auto">
                           {item.stamp || '—'}
                         </span>
                       </div>

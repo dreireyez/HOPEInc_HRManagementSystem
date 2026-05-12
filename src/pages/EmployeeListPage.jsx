@@ -211,10 +211,28 @@ export default function EmployeeListPage() {
   ];
 
   const selectCls = `
-    bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium
-    text-slate-700 outline-none transition-all duration-200 hover:border-slate-300
+    w-full bg-white rounded-xl border border-slate-200 pl-3 pr-8 py-2.5 text-sm font-medium
+    text-slate-700 outline-none appearance-none transition-all duration-200 hover:border-slate-300
     hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]
   `;
+
+  /** Wraps a <select> with a vertically-centred SVG chevron. */
+  const SelectWrap = ({ children, className = '' }) => {
+    const kids = Array.isArray(children) ? children : [children];
+    return (
+      <div className={`flex flex-col gap-1 ${className}`}>
+        {kids[0]}
+        <div className="relative">
+          {kids.slice(1)}
+          <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-400">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -238,38 +256,39 @@ export default function EmployeeListPage() {
 
       {/* FILTERS + SORT BY — unified control panel */}
       <div className="relative rounded-[1.8rem] px-5 pt-4 pb-3 flex flex-col gap-3 border border-slate-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)] hover:-translate-y-0.5 transition-all duration-300 bg-white">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Search — plain input, no chevron wrapper needed */}
+          <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Search</label>
             <input
               type="text"
               placeholder="Name or employee ID"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={selectCls}
+              className="w-full bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
+          <SelectWrap className="flex-1 min-w-[110px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Gender</label>
             <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)} className={selectCls}>
               <option value="ALL">All</option>
               <option value="M">Male</option>
               <option value="F">Female</option>
             </select>
-          </div>
+          </SelectWrap>
 
-          <div className="flex flex-col gap-1">
+          <SelectWrap className="flex-1 min-w-[130px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Department</label>
             <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className={selectCls}>
-              <option value="ALL">All departments</option>
+              <option value="ALL">All depts</option>
               {deptOptions.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
             </select>
-          </div>
+          </SelectWrap>
 
-          <div className="flex flex-col gap-1">
+          <SelectWrap className="flex-1 min-w-[130px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Job</label>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className={selectCls}>
               <option value="ALL">All titles</option>
@@ -277,21 +296,21 @@ export default function EmployeeListPage() {
                 <option key={j} value={j}>{j}</option>
               ))}
             </select>
-          </div>
+          </SelectWrap>
 
           {canSeeAdminMetadata && (
-            <div className="flex flex-col gap-1">
+            <SelectWrap className="flex-1 min-w-[110px]">
               <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Status</label>
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="ALL">All</option>
               </select>
-            </div>
+            </SelectWrap>
           )}
 
-          {/* Sort By — unified sort control replacing per-column sort arrows */}
-          <div className="flex flex-col gap-1">
+          {/* Sort By — unified sort control */}
+          <SelectWrap className="flex-1 min-w-[150px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Sort By</label>
             <select value={sortKey} onChange={handleSortChange} className={selectCls}>
               {SORT_OPTIONS.map((opt) => (
@@ -300,10 +319,10 @@ export default function EmployeeListPage() {
                 </option>
               ))}
             </select>
-          </div>
+          </SelectWrap>
 
-          <div className="ml-auto">
-            <div className="bg-slate-100 rounded-full px-4 py-2 text-[12px] font-semibold text-slate-500 border border-slate-200">
+          <div className="flex items-end shrink-0">
+            <div className="bg-slate-100 rounded-full px-4 py-2.5 text-[12px] font-semibold text-slate-500 border border-slate-200 whitespace-nowrap">
               {filtered.length} result{filtered.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -365,7 +384,7 @@ export default function EmployeeListPage() {
             {/* TABLE HEADER — flat text labels, no pills / shadows / sort arrows */}
             <div
               className={`
-                grid items-center gap-3 px-3 pb-4
+                grid items-center gap-3 px-3 pt-3 pb-4
                 border-b border-[#bec9c8]/50
                 ${gridCols}
               `}
