@@ -8,6 +8,8 @@ export default function EditEmployeeModal({ isOpen, onClose, initialData, onSucc
   const [formData, setFormData] = useState({
     firstname: '',
     lastname: '',
+    email: '',
+    phone_number: '',
     gender: 'M',
     hiredate: '',
     birthdate: '',
@@ -22,6 +24,8 @@ export default function EditEmployeeModal({ isOpen, onClose, initialData, onSucc
       setFormData({
         firstname: initialData.firstname || '',
         lastname: initialData.lastname || '',
+        email: initialData.email || '',
+        phone_number: initialData.phone_number || '',
         gender: initialData.gender || 'M',
         hiredate: initialData.hiredate || '',
         birthdate: initialData.birthdate || '',
@@ -62,6 +66,8 @@ export default function EditEmployeeModal({ isOpen, onClose, initialData, onSucc
       const payload = {
         firstname: formData.firstname,
         lastname: formData.lastname,
+        email: formData.email || null,
+        phone_number: formData.phone_number || null,
         gender: formData.gender,
         hiredate: formData.hiredate || null,
         birthdate: formData.birthdate || null,
@@ -129,6 +135,25 @@ export default function EditEmployeeModal({ isOpen, onClose, initialData, onSucc
               required
             />
           </div>
+
+          <Input 
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder="name@hope.com"
+            icon="mail"
+          />
+
+          <Input 
+            label="Phone Number"
+            name="phone_number"
+            value={formData.phone_number}
+            onChange={handleInputChange}
+            placeholder="+639#########"
+            icon="call"
+          />
 
           <div className="space-y-2">
             <label className="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-[var(--color-on-surface-variant)] ml-1">Gender</label>
