@@ -1,6 +1,9 @@
 alter table public.employee
 add column if not exists email text;
 
+alter table public.employee
+add column if not exists phone_number text;
+
 create or replace function public.create_employee_with_initial_assignment(
   p_empno varchar,
   p_firstname varchar,
@@ -10,6 +13,7 @@ create or replace function public.create_employee_with_initial_assignment(
   p_deptcode varchar,
   p_effdate date,
   p_email text default null,
+  p_phone_number text default null,
   p_hiredate date default null,
   p_birthdate date default null,
   p_salary numeric default null
@@ -20,6 +24,7 @@ returns table (
   lastname varchar,
   gender char(1),
   email text,
+  phone_number text,
   hiredate date,
   birthdate date,
   record_status varchar,
@@ -68,6 +73,7 @@ begin
     lastname,
     gender,
     email,
+    phone_number,
     hiredate,
     birthdate,
     record_status,
@@ -79,6 +85,7 @@ begin
     p_lastname,
     p_gender,
     p_email,
+    p_phone_number,
     p_hiredate,
     p_birthdate,
     'ACTIVE',
@@ -109,6 +116,7 @@ begin
     e.lastname::varchar,
     e.gender::char(1),
     e.email::text,
+    e.phone_number::text,
     e.hiredate::date,
     e.birthdate::date,
     e.record_status::varchar,
@@ -118,5 +126,5 @@ begin
 end;
 $$;
 
-revoke all on function public.create_employee_with_initial_assignment(varchar, varchar, varchar, char, varchar, varchar, date, text, date, date, numeric) from public, anon;
-grant execute on function public.create_employee_with_initial_assignment(varchar, varchar, varchar, char, varchar, varchar, date, text, date, date, numeric) to authenticated;
+revoke all on function public.create_employee_with_initial_assignment(varchar, varchar, varchar, char, varchar, varchar, date, text, text, date, date, numeric) from public, anon;
+grant execute on function public.create_employee_with_initial_assignment(varchar, varchar, varchar, char, varchar, varchar, date, text, text, date, date, numeric) to authenticated;

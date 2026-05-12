@@ -38,6 +38,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
     lastname: '',
     gender: 'M',
     email: '',
+    phone_number: '',
     hiredate: '',
     birthdate: '',
     jobcode: '',
@@ -93,6 +94,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
         lastname: '',
         gender: 'M',
         email: '',
+        phone_number: '',
         hiredate: '',
         birthdate: '',
         jobcode: '',
@@ -179,6 +181,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
         lastname: formData.lastname,
         gender: formData.gender,
         email: formData.email || null,
+        phone_number: formData.phone_number || null,
         hiredate: formData.hiredate || null,
         birthdate: formData.birthdate || null,
         jobcode: formData.jobcode,
@@ -258,6 +261,26 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="name@hope.com"
+              icon="mail"
+            />
+            <Input
+              label="Phone Number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleInputChange}
+              placeholder="+639#########"
+              icon="call"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

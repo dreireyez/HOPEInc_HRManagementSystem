@@ -69,12 +69,20 @@ export const getEmployee = async (empNo, userType) => {
       employeeQuery = employeeQuery.eq('record_status', 'ACTIVE');
     }
 
-    const [employeeRes, currentJobRes] = await Promise.all([
+    const [employeeRes, currentJobRes, latestJobRes] = await Promise.all([
       employeeQuery.maybeSingle(),
       supabase
         .from('employee_current_job')
-        .select('empno, jobdesc, deptname, salary, currenteffdate')
+        .select('empno, jobdesc, deptname, salary, effdate')
         .eq('empno', empNo)
+        .maybeSingle(),
+      supabase
+        .from('jobhistory')
+        .select('empno, deptcode, effdate, salary, job:job(jobdesc), department:department(deptname)')
+        .eq('empno', empNo)
+        .eq('record_status', 'ACTIVE')
+        .order('effdate', { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ]);
 
@@ -87,13 +95,60 @@ export const getEmployee = async (empNo, userType) => {
       return { data: null, error: null };
     }
 
+    let managerName = 'Unassigned';
+    if (latestJobRes?.data?.deptcode) {
+      const { data: leaderRows, error: leaderError } = await supabase
+        .from('jobhistory')
+        .select(
+          'empno, effdate, deptcode, jobcode, employee:employee(empno, firstname, lastname, record_status), job:job(jobcode, jobdesc)'
+        )
+        .eq('deptcode', latestJobRes.data.deptcode)
+        .eq('record_status', 'ACTIVE');
+
+      if (!leaderError && leaderRows?.length) {
+        const normalize = (value) => String(value || '').toLowerCase();
+        const formatName = (row) => {
+          const first = row.employee?.firstname || '';
+          const last = row.employee?.lastname || '';
+          const name = `${first} ${last}`.trim();
+          return name || 'Unassigned';
+        };
+        const pickLeader = (rows, keyword) => {
+          const filtered = rows.filter((row) => normalize(row.job?.jobdesc).includes(keyword));
+          if (!filtered.length) return null;
+
+          filtered.sort((a, b) => {
+            const aDate = a.effdate ? new Date(a.effdate).getTime() : 0;
+            const bDate = b.effdate ? new Date(b.effdate).getTime() : 0;
+            return bDate - aDate;
+          });
+
+          return filtered[0];
+        };
+
+        const presidentRow = pickLeader(leaderRows, 'president');
+        const managerRow = presidentRow ? null : pickLeader(leaderRows, 'manager');
+        const leaderRow = presidentRow || managerRow;
+
+        if (leaderRow) {
+          managerName = formatName(leaderRow);
+        }
+      }
+    }
+
+    const resolvedJobDesc = currentJobRes.data?.jobdesc ?? latestJobRes.data?.job?.jobdesc ?? null;
+    const resolvedDeptName = currentJobRes.data?.deptname ?? latestJobRes.data?.department?.deptname ?? null;
+    const resolvedSalary = currentJobRes.data?.salary ?? latestJobRes.data?.salary ?? null;
+    const resolvedEffDate = currentJobRes.data?.effdate ?? latestJobRes.data?.effdate ?? null;
+
     return {
       data: {
         ...employee,
-        jobdesc: currentJobRes.data?.jobdesc ?? null,
-        deptname: currentJobRes.data?.deptname ?? null,
-        currentSalary: currentJobRes.data?.salary ?? null,
-        currentEffDate: currentJobRes.data?.currenteffdate ?? null,
+        jobdesc: resolvedJobDesc,
+        deptname: resolvedDeptName,
+        currentSalary: resolvedSalary,
+        currentEffDate: resolvedEffDate,
+        managerName,
       },
       error: null,
     };
@@ -116,6 +171,7 @@ export const addEmployee = async (employeeData) => {
       p_lastname: employeeData.lastname,
       p_gender: employeeData.gender,
       p_email: employeeData.email ?? null,
+      p_phone_number: employeeData.phone_number ?? null,
       p_hiredate: employeeData.hiredate ?? null,
       p_birthdate: employeeData.birthdate ?? null,
       p_jobcode: employeeData.jobcode,

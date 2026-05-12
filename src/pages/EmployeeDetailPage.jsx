@@ -46,13 +46,13 @@ export default function EmployeeDetailPage() {
     firstName: employee.firstname || 'N/A',
     lastName: employee.lastname || 'N/A',
     email: employee.email || 'Not provided',
-    phone: employee.phone || '+1 (555) 000-0000', // Mock if not in DB
-    location: employee.location || 'Not specified',
-    office: employee.office || 'Unassigned Desk', // Mock if not in DB
+    phone: employee.phone_number || 'Not provided',
+    gender: employee.gender || 'N/A',
+    birthdate: employee.birthdate ? new Date(employee.birthdate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified',
     joined: employee.hiredate ? new Date(employee.hiredate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified',
     role: employee.jobdesc || 'Not assigned',
     dept: employee.deptname || 'Not assigned',
-    manager: employee.manager || 'Unassigned', // Mock if not in DB
+    manager: employee.managerName || 'Unassigned',
     status: employee.record_status === 'ACTIVE' ? 'Active' : 'Inactive',
     empNo: employee.empno
   } : null;
@@ -142,10 +142,6 @@ export default function EmployeeDetailPage() {
                       <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">{profile.dept}</span>
                     </div>
                     <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">location_on</span>
-                      <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">{profile.location}</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center gap-2">
                       <span className="material-symbols-outlined text-[14px] text-[var(--color-on-surface-variant)]">badge</span>
                       <span className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest">EMP-{profile.empNo}</span>
                     </div>
@@ -161,6 +157,16 @@ export default function EmployeeDetailPage() {
                   <div>
                     <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Hire Date</p>
                     <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.joined}</p>
+                  </div>
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Gender</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.gender}</p>
+                  </div>
+                  <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-1">Birth Date</p>
+                    <p className="font-sans text-sm font-semibold text-[var(--color-on-surface)]">{profile.birthdate}</p>
                   </div>
                   <div className="hidden md:block w-px bg-[var(--color-outline-variant)]/20"></div>
                   <div>
@@ -195,15 +201,6 @@ export default function EmployeeDetailPage() {
                   <div>
                     <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-0.5">Mobile Phone</p>
                     <p className="font-sans text-sm font-medium text-[var(--color-on-surface)]">{profile.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 group cursor-pointer">
-                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] shadow-inset flex items-center justify-center text-[var(--color-primary-container)] group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-[18px]">desk</span>
-                  </div>
-                  <div>
-                    <p className="font-mono text-[10px] font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-0.5">Office Location</p>
-                    <p className="font-sans text-sm font-medium text-[var(--color-on-surface)]">{profile.office}</p>
                   </div>
                 </div>
               </div>
