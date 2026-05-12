@@ -1,41 +1,70 @@
 import { useState, useEffect } from 'react';
 import JobHistoryModal from './modals/JobHistoryModal';
-import { getJobHistory } from '../services/jobHistoryService';
+import { getEmployeeFullHistory } from '../services/reportService';
 import { useRights } from '../context/UserRightsContext';
-import { Button } from './ui/Button';
 
 export default function JobHistoryPanel({ empNo }) {
   const { can, currentUser } = useRights();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!empNo) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const { data, error: fetchError } = await getJobHistory(empNo, currentUser?.user_type || 'USER');
-        
-        if (fetchError) {
-          setError(fetchError.message);
-        } else {
-          // Assuming data is returned in descending order (most recent first)
-          setHistory(data || []);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const pick = (row, ...keys) => {
+    for (const key of keys) {
+      if (row?.[key] !== undefined && row?.[key] !== null && row?.[key] !== '') {
+        return row[key];
       }
-    };
+    }
+    return '';
+  };
 
+  const fetchHistory = async () => {
+    if (!empNo) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await getEmployeeFullHistory(empNo);
+
+      if (fetchError) {
+        setError(fetchError.message);
+      } else {
+        setHistory(data || []);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchHistory();
   }, [empNo, currentUser?.user_type]);
+
+  const handleEdit = (row) => {
+    const empNoField = pick(row, 'empno', 'empNo', 'emp_no');
+    const jobCode = pick(row, 'jobcode', 'jobCode', 'job_code');
+    const deptCode = pick(row, 'deptcode', 'deptCode', 'dept_code');
+    const effDate = pick(row, 'effdate', 'effDate', 'eff_date');
+
+    setEditingRecord({
+      empno: empNoField,
+      jobCode,
+      deptCode,
+      effDate,
+      salary: row.salary,
+      id: {
+        empno: empNoField,
+        jobcode: jobCode,
+        effdate: effDate,
+      },
+    });
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl p-8 shadow-outset h-full">
@@ -46,7 +75,10 @@ export default function JobHistoryPanel({ empNo }) {
         </div>
         {can('JH_ADD') && (
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingRecord(null);
+              setIsModalOpen(true);
+            }}
             className="px-4 py-2 rounded-md bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover active:shadow-inset transition-all font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--color-primary-container)] flex items-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">add</span> Add Role
@@ -76,10 +108,12 @@ export default function JobHistoryPanel({ empNo }) {
         <div className="relative pl-6 border-l-2 border-[var(--color-surface-container-highest)] space-y-8 mt-6">
           {history.map((row, idx) => {
             const isCurrent = idx === 0;
-            const jobCode = row.jobcode ?? row.jobCode ?? row.job_code ?? 'N/A';
-            const deptCode = row.deptcode ?? row.deptCode ?? row.dept_code ?? 'N/A';
-            const effDate = row.effdate ?? row.effDate ?? row.eff_date ?? null;
-            const empNoField = row.empno ?? row.empNo ?? row.emp_no ?? '';
+            const jobTitle = pick(row, 'job_desc', 'jobdesc', 'job_title') || 'N/A';
+            const deptName = pick(row, 'dept_name', 'deptname', 'department_name') || 'N/A';
+            const effDate = pick(row, 'effdate', 'effDate', 'eff_date') || null;
+            const empNoField = pick(row, 'empno', 'empNo', 'emp_no');
+            const jobCode = pick(row, 'jobcode', 'jobCode', 'job_code');
+            const deptCode = pick(row, 'deptcode', 'deptCode', 'dept_code');
             
             return (
               <div key={`${empNoField}-${jobCode}-${effDate}-${idx}`} className="relative group">
@@ -95,13 +129,13 @@ export default function JobHistoryPanel({ empNo }) {
                   <div className="flex justify-between items-start mb-2 flex-wrap gap-4">
                     <div>
                       <h4 className="font-sans text-lg font-bold text-[var(--color-on-surface)] flex items-center gap-3">
-                        {jobCode}
+                        {jobTitle}
                         {isCurrent && (
                           <span className="inline-block px-2 py-0.5 rounded-full bg-[var(--color-surface-dim)] font-mono text-[10px] text-[var(--color-on-surface)] font-bold uppercase tracking-wider shadow-inset">Current</span>
                         )}
                       </h4>
                       <p className="font-mono text-[11px] font-bold text-[var(--color-primary-container)] uppercase tracking-widest mt-1">
-                        {deptCode} Dept
+                        {deptName}
                       </p>
                     </div>
                     
@@ -118,7 +152,16 @@ export default function JobHistoryPanel({ empNo }) {
                   {/* Action Buttons (Hover Reveal) */}
                   <div className="flex justify-end gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     {can('JH_EDIT') && (
-                      <button className="p-2 text-[var(--color-primary-container)] bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover rounded-md transition-all cursor-pointer flex items-center justify-center">
+                      <button
+                        onClick={() => handleEdit({
+                          ...row,
+                          empno: empNoField || row.empno,
+                          jobcode: jobCode || row.jobcode,
+                          deptcode: deptCode || row.deptcode,
+                          effdate: effDate || row.effdate,
+                        })}
+                        className="p-2 text-[var(--color-primary-container)] bg-[var(--color-surface)] shadow-outset hover:shadow-outset-hover rounded-md transition-all cursor-pointer flex items-center justify-center"
+                      >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                       </button>
                     )}
@@ -137,15 +180,16 @@ export default function JobHistoryPanel({ empNo }) {
 
       <JobHistoryModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingRecord(null);
+        }}
         empNo={empNo}
+        initialData={editingRecord}
         onSuccess={() => {
           setIsModalOpen(false);
-          const refetch = async () => {
-            const { data } = await getJobHistory(empNo, currentUser?.user_type || 'USER');
-            setHistory(data || []);
-          };
-          refetch();
+          setEditingRecord(null);
+          fetchHistory();
         }}
       />
     </div>
