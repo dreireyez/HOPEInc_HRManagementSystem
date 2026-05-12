@@ -4,6 +4,7 @@ import JobHistoryPanel from '../components/JobHistoryPanel';
 import { getEmployee } from '../services/employeeService';
 import { useRights } from '../context/UserRightsContext';
 import EditEmployeeModal from '../components/modals/EditEmployeeModal';
+import { Badge } from '../components/ui/Badge';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams(); // id is actually emp_no from URL
@@ -117,13 +118,16 @@ export default function EmployeeDetailPage() {
               <div className="absolute top-0 left-0 w-2 h-full bg-[var(--color-primary-container)]"></div>
 
               <div className="relative shrink-0 mx-auto md:mx-0">
-                <div className="w-32 h-32 rounded-full shadow-inset p-2 border-4 border-[var(--color-surface)] bg-[var(--color-surface-dim)]">
-                  <img
-                    alt="Employee portrait"
-                    className="w-full h-full rounded-full object-cover shadow-inner grayscale-[10%]"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIykD8PTYcxDgvvQT3-xzyhg9iuk7PRsWeqHVYo1RAvfcy3PQ-IujbJ9Hw4BKNdOOEn6jNxCYdxyaO0nFkcsEJIqVEBLiYzaIE3p7SN1ZYNDPlF1x9Bu0QOyFe4_7XzK5KG92sPqFgSf8IHv_RN44n9Q0A77RoUUv8XX8UUuZZhdg4EG75KgL9NZ5ewYQGErN5boiq0OGcKj3YhCWKaK2YKi-UH6ObCammwWqaLYPDjSul0BG8eCp6Ez1Dwe4AWk1JVn1fFyXtHoqa"
-                  />
-                </div>
+                <Badge 
+                  variant="primary" 
+                  className="!w-24 !h-24 !text-4xl !p-0 !flex !items-center !justify-center !shadow-outset shrink-0 select-none !font-black !tracking-normal !leading-none"
+                >
+                  {`${profile.firstName} ${profile.lastName}`
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()}
+                </Badge>
                 <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-[var(--color-surface)] shadow-outset flex items-center justify-center">
                   <div className={`w-3 h-3 rounded-full shadow-[inset_1px_1px_2px_rgba(0,0,0,0.2)] ${profile.status === 'Active' ? 'bg-[#15803d]' : 'bg-[#ba1a1a]'}`}></div>
                 </div>

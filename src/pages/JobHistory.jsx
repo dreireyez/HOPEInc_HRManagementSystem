@@ -614,10 +614,26 @@ export default function JobHistory() {
                     )}
 
                     {canSeeAllStatuses && (
-                      <div className="text-center">
-                        <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[100px] block mx-auto">
-                          {item.stamp || '—'}
-                        </span>
+                      <div className="flex flex-col items-center justify-center text-center">
+                        {(() => {
+                          const stampStr = item.stamp || '';
+                          const spaceIdx = stampStr.indexOf(' ');
+                          const datePart = spaceIdx === -1 ? stampStr : stampStr.substring(0, spaceIdx);
+                          const timePart = spaceIdx === -1 ? '' : stampStr.substring(spaceIdx + 1);
+                          
+                          return (
+                            <>
+                              <span className="font-mono text-[11px] font-bold text-[#3f4948] leading-tight">
+                                {datePart || '—'}
+                              </span>
+                              {timePart && (
+                                <span className="font-mono text-[9px] font-medium text-[#6f7979] mt-0.5 leading-tight">
+                                  {timePart}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })() || '—'}
                       </div>
                     )}
 
