@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useRights } from '../context/UserRightsContext';
 import supabase from '../lib/supabaseClient';
@@ -185,15 +186,16 @@ export default function Layout() {
       </nav>
 
       {/* ── Logout Confirmation Dialog ── */}
-      {showLogoutDialog && (
+      {showLogoutDialog && createPortal(
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-6 overlay-scrim animate-in fade-in"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#181c1c]/40 backdrop-blur-sm animate-in fade-in"
           style={{ animationDuration: '200ms' }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutDialog(false); }}
         >
           <div
             className="modal-panel w-full max-w-sm rounded-[var(--radius-xl)] overflow-hidden animate-in zoom-in-95"
             style={{ animationDuration: '240ms' }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="px-8 pt-8 pb-5 flex flex-col items-center text-center">

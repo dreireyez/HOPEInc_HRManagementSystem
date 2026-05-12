@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { addEmployee } from '../../services/employeeService';
 import { getJobs } from '../../services/jobService';
 import { getDepts } from '../../services/departmentService';
@@ -203,9 +204,12 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overlay-scrim animate-in fade-in">
-      <div className="modal-panel w-full max-w-3xl overflow-hidden rounded-[28px] animate-in zoom-in-95">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#181c1c]/40 backdrop-blur-sm animate-in fade-in">
+      <div 
+        className="modal-panel w-full max-w-3xl overflow-hidden rounded-[28px] animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="px-8 pt-8 pb-6 border-b border-[var(--color-outline-variant)]/45 bg-[var(--color-surface-container-low)] flex justify-between items-start">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-[0.24em] text-[var(--color-primary-container)] font-bold mb-1 block">
@@ -287,8 +291,6 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
             <Input label="First Name" name="firstname" value={formData.firstname} onChange={handleInputChange} placeholder="First name" icon="person" required />
             <Input label="Last Name" name="lastname" value={formData.lastname} onChange={handleInputChange} placeholder="Last name" icon="person" required />
           </div>
-
-          <Input label="Email Address" name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="employee@hope.com" icon="mail" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input label="Hire Date" name="hiredate" type="date" value={formData.hiredate} onChange={handleInputChange} icon="calendar_today" required />
@@ -411,6 +413,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
