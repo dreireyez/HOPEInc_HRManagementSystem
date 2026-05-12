@@ -18,7 +18,9 @@ export const getAllJobHistory = async (userType) => {
       query = query.eq('record_status', 'ACTIVE');
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query
+      .order('effdate', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw error;
@@ -52,7 +54,9 @@ export const getJobHistory = async (empNo, userType) => {
     }
     // ADMIN and SUPERADMIN see all records (no additional filter applied)
 
-    const { data, error } = await query;
+    const { data, error } = await query
+      .order('effdate', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw error;

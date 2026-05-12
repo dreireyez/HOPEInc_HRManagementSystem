@@ -81,12 +81,25 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
         return;
       }
 
+      if (formData.salary === '' || formData.salary === null || formData.salary === undefined) {
+        setError('Salary is required');
+        setLoading(false);
+        return;
+      }
+
+      const parsedSalary = Number.parseFloat(formData.salary);
+      if (Number.isNaN(parsedSalary)) {
+        setError('Salary must be a valid number');
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         empno: empNo,
         jobcode: formData.jobCode,
         deptcode: formData.deptCode,
         effdate: formData.effDate,
-        salary: formData.salary ? parseFloat(formData.salary) : null,
+        salary: parsedSalary,
         record_status: 'ACTIVE'
       };
 
@@ -211,10 +224,12 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
               name="salary"
               type="number"
               step="0.01"
+              min="0"
               value={formData.salary}
               onChange={handleInputChange}
               placeholder="0.00"
               icon="payments"
+              required
             />
           </div>
 

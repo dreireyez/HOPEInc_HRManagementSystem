@@ -105,6 +105,9 @@ export default function JobHistory() {
     row[snake] ??
     '';
 
+  const getCreatedAt = (row) =>
+    f(row, 'createdAt', 'created_at');
+
   const handleSoftDelete = (item) => {
     setDeleteTarget(item);
   };
@@ -269,6 +272,9 @@ export default function JobHistory() {
       if (sortField === 'salary') {
         aVal = Number(aVal) || 0;
         bVal = Number(bVal) || 0;
+      } else if (sortField === 'effdate') {
+        aVal = aVal ? new Date(aVal).getTime() : 0;
+        bVal = bVal ? new Date(bVal).getTime() : 0;
       } else {
         aVal = String(aVal);
         bVal = String(bVal);
@@ -283,6 +289,15 @@ export default function JobHistory() {
         return sortDir === 'asc'
           ? 1
           : -1;
+
+      if (sortField === 'effdate') {
+        const aCreated = getCreatedAt(a);
+        const bCreated = getCreatedAt(b);
+        const aCreatedVal = aCreated ? new Date(aCreated).getTime() : 0;
+        const bCreatedVal = bCreated ? new Date(bCreated).getTime() : 0;
+        if (aCreatedVal < bCreatedVal) return sortDir === 'asc' ? -1 : 1;
+        if (aCreatedVal > bCreatedVal) return sortDir === 'asc' ? 1 : -1;
+      }
 
       return 0;
     });

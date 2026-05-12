@@ -56,7 +56,9 @@ export const getEmployeeFullHistory = async (empNo) => {
     const { data, error } = await supabase
       .from('employee_full_history')
       .select('*')
-      .eq('empno', empNo);
+      .eq('empno', empNo)
+      .order('effdate', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw error;
