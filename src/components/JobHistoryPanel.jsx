@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import JobHistoryModal from './modals/JobHistoryModal';
 import { getEmployeeFullHistory } from '../services/reportService';
 import { useRights } from '../context/UserRightsContext';
@@ -20,7 +20,7 @@ export default function JobHistoryPanel({ empNo }) {
     return '';
   };
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!empNo) return;
 
     setLoading(true);
@@ -39,11 +39,11 @@ export default function JobHistoryPanel({ empNo }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [empNo]);
 
   useEffect(() => {
     fetchHistory();
-  }, [empNo, currentUser?.user_type]);
+  }, [fetchHistory, currentUser?.user_type]);
 
   const handleEdit = (row) => {
     const empNoField = pick(row, 'empno', 'empNo', 'emp_no');

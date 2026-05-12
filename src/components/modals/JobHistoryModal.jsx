@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { addJobHistory, updateJobHistory } from '../../services/jobHistoryService';
 import { getJobs } from '../../services/jobService';
 import { getDepts } from '../../services/departmentService';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+
 export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = null, onSuccess }) {
   const pick = (row, ...keys) => {
     for (const key of keys) {
@@ -123,9 +125,12 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overlay-scrim animate-in fade-in duration-300">
-      <div className="modal-panel w-full max-w-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-300">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#181c1c]/40 backdrop-blur-sm animate-in fade-in duration-300">
+      <div 
+        className="modal-panel w-full max-w-2xl overflow-hidden rounded-[28px] animate-in zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         <div className="px-8 pt-8 pb-6 border-b border-[var(--color-outline-variant)]/45 bg-[var(--color-surface-container-low)] flex justify-between items-start">
           <div>
@@ -262,6 +267,7 @@ export default function JobHistoryModal({ isOpen, onClose, empNo, initialData = 
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { Button } from '../ui/Button';
 
 export default function ChangeUserRoleDialog({ isOpen, onCancel, onConfirm, user }) {
@@ -13,9 +14,12 @@ export default function ChangeUserRoleDialog({ isOpen, onCancel, onConfirm, user
       ? 'Promote to ADMIN'
       : 'Demote to USER';
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 overlay-scrim animate-in fade-in">
-      <div className="modal-panel w-full max-w-md rounded-[28px] p-8 animate-in zoom-in-95">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#181c1c]/40 backdrop-blur-sm animate-in fade-in">
+      <div 
+        className="modal-panel w-full max-w-md rounded-[28px] p-8 animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex flex-col items-center text-center">
           <div className="w-16 h-16 rounded-3xl bg-[var(--color-primary-soft)] flex items-center justify-center text-[var(--color-primary-container)] mb-6 shadow-inset">
             <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -43,6 +47,7 @@ export default function ChangeUserRoleDialog({ isOpen, onCancel, onConfirm, user
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
