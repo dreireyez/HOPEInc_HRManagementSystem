@@ -16,6 +16,14 @@ import { useToast } from '../components/ui/useToast';
 
 const PAGE_SIZE = 10;
 
+/** Sort presets for the unified Sort By dropdown. */
+const SORT_OPTIONS = [
+  { label: 'Job Code (A–Z)',       field: 'jobCode', dir: 'asc'  },
+  { label: 'Job Code (Z–A)',       field: 'jobCode', dir: 'desc' },
+  { label: 'Description (A–Z)',   field: 'jobDesc', dir: 'asc'  },
+  { label: 'Description (Z–A)',   field: 'jobDesc', dir: 'desc' },
+];
+
 export default function JobListPage() {
   const { can, currentUser } = useRights();
   const toast = useToast();
@@ -114,15 +122,12 @@ export default function JobListPage() {
     setDeleteTarget(null);
   };
 
-  const toggleSort = (field) => {
-    if (sortField === field) {
-      setSortDir((d) =>
-        d === 'asc' ? 'desc' : 'asc'
-      );
-    } else {
-      setSortField(field);
-      setSortDir('asc');
-    }
+  const sortKey = `${sortField}__${sortDir}`;
+
+  const handleSortChange = (e) => {
+    const [field, dir] = e.target.value.split('__');
+    setSortField(field);
+    setSortDir(dir);
   };
 
   const f = (row, camel, snake) =>
@@ -220,37 +225,39 @@ export default function JobListPage() {
     );
   }, [totalPages]);
 
-  const SortIcon = ({ field }) => (
-    <span
-      className={`material-symbols-outlined text-[14px] transition-all duration-200 ${sortField === field
-        ? 'text-[#1e3a5f]'
-        : 'text-slate-300'
-        }`}
-    >
-      {sortField === field
-        ? sortDir === 'asc'
-          ? 'north'
-          : 'south'
-        : 'unfold_more'}
-    </span>
-  );
 
   const selectCls = `
-    bg-white
-    rounded-xl
-    border border-slate-200
-    px-3 py-2.5
-    text-sm
-    font-medium
-    text-slate-700
-    outline-none
-    transition-all duration-200
-    hover:border-slate-300
+    w-full bg-white rounded-xl border border-slate-200 pl-3 pr-8 py-2.5
+    text-sm font-medium text-slate-700 outline-none appearance-none
+    transition-all duration-200 hover:border-slate-300
     hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
-    focus:ring-2
-    focus:ring-[#1e3a5f]/20
-    focus:border-[#1e3a5f]
+    focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]
   `;
+
+  /** Shared chevron wrapper — chevron centred inside the select field. */
+  const SelectWrap = ({ children, className = '' }) => {
+    const kids = Array.isArray(children) ? children : [children];
+    return (
+      <div className={`flex flex-col gap-1 ${className}`}>
+        {kids[0]}
+        <div className="relative">
+          {kids.slice(1)}
+          <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-400">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  /** Flat mono column header — matches Employees table style. */
+  const ColHeader = ({ label, align = 'left' }) => (
+    <div className={`font-mono uppercase text-[#3f4948] font-medium tracking-[0.05em] text-xs ${
+      align === 'center' ? 'text-center' : 'text-left'
+    }`}>{label}</div>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -279,182 +286,75 @@ export default function JobListPage() {
         )}
       </header>
 
-      {/* FILTERS */}
-      <div
-        className="
-          relative
-          rounded-[1.8rem]
-          px-5 pt-4 pb-3
-          flex flex-col gap-3
-          border border-slate-100
-          shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]
-          hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)]
-          hover:-translate-y-0.5
-          transition-all duration-300
-          bg-white
-        "
-      >
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
-            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
-              Search
-            </label>
-
+      {/* FILTERS + SORT BY — unified control panel */}
+      <div className="relative rounded-[1.8rem] px-5 pt-4 pb-3 flex flex-col gap-3 border border-slate-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)] hover:-translate-y-0.5 transition-all duration-300 bg-white">
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Search */}
+          <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Search</label>
             <input
               type="text"
               placeholder="Search job code or description"
               value={searchQuery}
-              onChange={(e) =>
-                setSearchQuery(
-                  e.target.value
-                )
-              }
-              className="
-                bg-white
-                rounded-xl
-                border border-slate-200
-                px-4 py-3
-                text-sm
-                font-medium
-                text-slate-700
-                outline-none
-                transition-all duration-200
-                hover:border-slate-300
-                hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]
-                focus:ring-2
-                focus:ring-[#1e3a5f]/20
-                focus:border-[#1e3a5f]
-              "
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]"
             />
           </div>
 
+          {/* Status — admin only */}
           {canSeeAdminMetadata && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">
-                Status
-              </label>
-
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value
-                  )
-                }
-                className={selectCls}
-              >
-                <option value="ALL">
-                  All
-                </option>
-
-                <option value="ACTIVE">
-                  Active
-                </option>
-
-                <option value="INACTIVE">
-                  Inactive
-                </option>
+            <SelectWrap className="flex-1 min-w-[110px]">
+              <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Status</label>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+                <option value="ALL">All</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
               </select>
-            </div>
+            </SelectWrap>
           )}
 
-          <div className="ml-auto">
-            <div
-              className="
-                bg-slate-100
-                rounded-full
-                px-4 py-2
-                text-[12px]
-                font-semibold
-                text-slate-500
-                border border-slate-200
-              "
-            >
-              {filteredJobs.length} result
-              {filteredJobs.length !== 1
-                ? 's'
-                : ''}
+          {/* Sort By */}
+          <SelectWrap className="flex-1 min-w-[170px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Sort By</label>
+            <select value={sortKey} onChange={handleSortChange} className={selectCls}>
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.field}__${opt.dir}`} value={`${opt.field}__${opt.dir}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </SelectWrap>
+
+          {/* Results pill */}
+          <div className="flex items-end shrink-0">
+            <div className="bg-slate-100 rounded-full px-4 py-2.5 text-[12px] font-semibold text-slate-500 border border-slate-200 whitespace-nowrap">
+              {filteredJobs.length} result{filteredJobs.length !== 1 ? 's' : ''}
             </div>
           </div>
         </div>
 
-        {(searchQuery ||
-          statusFilter !== 'ALL') && (
-            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold mr-1">
-                Filters
-              </span>
-
-              {searchQuery && (
-                <button
-                  onClick={() =>
-                    setSearchQuery('')
-                  }
-                  className="
-                  inline-flex items-center gap-1.5
-                  rounded-full
-                  bg-[#1e3a5f]/10
-                  text-[#1e3a5f]
-                  border border-[#1e3a5f]/10
-                  px-3 py-1.5
-                  text-xs
-                  font-semibold
-                  hover:bg-[#1e3a5f]/15
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-                >
-                  "{searchQuery}"
-                  <span className="opacity-60">
-                    ×
-                  </span>
-                </button>
-              )}
-
-              {statusFilter !== 'ALL' && (
-                <button
-                  onClick={() =>
-                    setStatusFilter('ALL')
-                  }
-                  className="
-                  inline-flex items-center gap-1.5
-                  rounded-full
-                  bg-slate-100
-                  text-slate-600
-                  border border-slate-200
-                  px-3 py-1.5
-                  text-xs
-                  font-semibold
-                  hover:bg-slate-200
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-                >
-                  {statusFilter}
-                  <span className="opacity-60">
-                    ×
-                  </span>
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('ALL');
-                }}
-                className="
-                text-[11px]
-                font-semibold
-                text-slate-400
-                hover:text-red-500
-                transition-colors
-                ml-1
-              "
-              >
-                Clear all
+        {/* ACTIVE FILTER CHIPS */}
+        {(searchQuery || statusFilter !== 'ALL') && (
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold mr-1">Filters</span>
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="inline-flex items-center gap-1.5 rounded-full bg-[#1e3a5f]/10 text-[#1e3a5f] border border-[#1e3a5f]/10 px-3 py-1.5 text-xs font-semibold hover:bg-[#1e3a5f]/15 hover:-translate-y-0.5 transition-all duration-200">
+                "{searchQuery}" <span className="opacity-60">×</span>
               </button>
-            </div>
-          )}
+            )}
+            {statusFilter !== 'ALL' && (
+              <button onClick={() => setStatusFilter('ALL')} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 hover:-translate-y-0.5 transition-all duration-200">
+                {statusFilter} <span className="opacity-60">×</span>
+              </button>
+            )}
+            <button
+              onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }}
+              className="text-[11px] font-semibold text-slate-400 hover:text-red-500 transition-colors ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ERROR */}
@@ -472,68 +372,21 @@ export default function JobListPage() {
       ) : (
         <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-[0_4px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="flex flex-col gap-3">
-            {/* HEADER */}
+            {/* TABLE HEADER — flat mono labels, consistent with Employees page */}
             <div
-              className={`
-                grid items-center gap-4 px-4 py-2
-                ${canSeeAdminMetadata
-                  ? 'grid-cols-[160px_2fr_120px_140px_60px]'
+              className={`grid items-center gap-4 px-4 pt-3 pb-4 border-b border-[#bec9c8]/50 ${
+                canSeeAdminMetadata
+                  ? 'grid-cols-[160px_1fr_120px_140px_60px]'
                   : canManageRows
-                    ? 'grid-cols-[160px_2fr_60px]'
-                    : 'grid-cols-[160px_2fr]'
-                }
-              `}
+                    ? 'grid-cols-[160px_1fr_60px]'
+                    : 'grid-cols-[160px_1fr]'
+              }`}
             >
-              {[
-                ['jobCode', 'Job Code'],
-                ['jobDesc', 'Description'],
-              ].map(([field, label]) => (
-                <button
-                  key={field}
-                  onClick={() =>
-                    toggleSort(field)
-                  }
-                  className="
-                    flex items-center gap-1
-                    text-[11px]
-                    font-mono
-                    font-bold
-                    uppercase
-                    tracking-[0.18em]
-                    text-slate-500
-                    hover:text-slate-800
-                    bg-slate-50
-                    hover:bg-slate-100
-                    border border-slate-200
-                    rounded-full
-                    px-3 py-1.5
-                    transition-all duration-200
-                    hover:-translate-y-0.5
-                    hover:shadow-[0_8px_18px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.05)]
-                    shadow-[0_4px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]
-                    w-fit
-                  "
-                >
-                  {label}
-                  <SortIcon field={field} />
-                </button>
-              ))}
-
-              {canSeeAdminMetadata && (
-                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
-                  Status
-                </div>
-              )}
-
-              {canSeeAdminMetadata && (
-                <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
-                  Stamp
-                </div>
-              )}
-
-              {canManageRows && (
-                <div />
-              )}
+              <ColHeader label="Job Code" />
+              <ColHeader label="Description" />
+              {canSeeAdminMetadata && <ColHeader label="Status" align="center" />}
+              {canSeeAdminMetadata && <ColHeader label="Stamp" align="center" />}
+              {canManageRows && <div />}
             </div>
 
             {/* ROWS */}
@@ -561,10 +414,10 @@ export default function JobListPage() {
                     group
                     grid items-center gap-4
                     ${canSeeAdminMetadata
-                      ? 'grid-cols-[160px_2fr_120px_140px_60px]'
+                      ? 'grid-cols-[160px_1fr_120px_140px_60px]'
                       : canManageRows
-                        ? 'grid-cols-[160px_2fr_60px]'
-                        : 'grid-cols-[160px_2fr]'
+                        ? 'grid-cols-[160px_1fr_60px]'
+                        : 'grid-cols-[160px_1fr]'
                     }
                     px-4 py-5
                     rounded-[1.6rem]

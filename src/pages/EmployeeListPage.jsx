@@ -18,6 +18,20 @@ import { Pagination } from '../components/ui/Pagination';
 
 const PAGE_SIZE = 10;
 
+/** Sort presets displayed in the unified "Sort By" dropdown. */
+const SORT_OPTIONS = [
+  { label: 'Name (A–Z)',           field: 'lastname',  dir: 'asc'  },
+  { label: 'Name (Z–A)',           field: 'lastname',  dir: 'desc' },
+  { label: 'Employee ID (Asc)',    field: 'empno',     dir: 'asc'  },
+  { label: 'Employee ID (Desc)',   field: 'empno',     dir: 'desc' },
+  { label: 'Date Hired (Newest)',  field: 'hiredate',  dir: 'desc' },
+  { label: 'Date Hired (Oldest)',  field: 'hiredate',  dir: 'asc'  },
+  { label: 'Department (A–Z)',     field: 'deptname',  dir: 'asc'  },
+  { label: 'Job Title (A–Z)',      field: 'jobdesc',   dir: 'asc'  },
+  { label: 'Birthdate (Newest)',   field: 'birthdate', dir: 'desc' },
+  { label: 'Birthdate (Oldest)',   field: 'birthdate', dir: 'asc'  },
+];
+
 export default function EmployeeListPage() {
   const { can, currentUser } = useRights();
   const navigate = useNavigate();
@@ -77,13 +91,13 @@ export default function EmployeeListPage() {
     }
   }, [currentUser?.user_type, fetchEmployees]);
 
-  const toggleSort = (field) => {
-    if (sortField === field) {
-      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortDir('asc');
-    }
+  /** Derive the current sort-preset key so the <select> stays in sync. */
+  const sortKey = `${sortField}__${sortDir}`;
+
+  const handleSortChange = (e) => {
+    const [field, dir] = e.target.value.split('__');
+    setSortField(field);
+    setSortDir(dir);
   };
 
   const deptOptions = [...new Set(employees.map((e) => e.deptname).filter(Boolean))].sort();
@@ -178,38 +192,47 @@ export default function EmployeeListPage() {
     fetchEmployees();
   };
 
-  const SortIcon = ({ field }) => (
-    <span
-      className={`material-symbols-outlined text-[14px] transition-all duration-200 ${
-        sortField === field ? 'text-[#1e3a5f]' : 'text-slate-300'
-      }`}
-    >
-      {sortField === field ? (sortDir === 'asc' ? 'north' : 'south') : 'unfold_more'}
-    </span>
-  );
-
   const gridCols = canSeeAdminMetadata
     ? 'grid-cols-[64px_2fr_56px_100px_minmax(0,1.2fr)_minmax(0,1.1fr)_84px_84px_90px_70px_48px]'
     : canManageRows
       ? 'grid-cols-[64px_2fr_56px_100px_minmax(0,1.2fr)_minmax(0,1.1fr)_84px_84px_48px]'
       : 'grid-cols-[64px_2fr_56px_100px_minmax(0,1.2fr)_minmax(0,1.1fr)_84px_84px]';
 
+  /* Column definitions — used by the flat header row. */
   const columns = [
-    { field: 'empno', label: 'ID', align: 'left' },
-    { field: 'lastname', label: 'Employee', align: 'left' },
-    { field: 'gender', label: 'Gen', align: 'center' },
-    { field: 'birthdate', label: 'Birthdate', align: 'center' },
-    { field: 'jobdesc', label: 'Job', align: 'left' },
-    { field: 'deptname', label: 'Dept.', align: 'left' },
-    { field: 'hiredate', label: 'Hired', align: 'center' },
-    { field: 'sepdate', label: 'Sep.', align: 'center' },
+    { label: 'ID',        align: 'left'   },
+    { label: 'Employee',  align: 'left'   },
+    { label: 'Gen',       align: 'center' },
+    { label: 'Birthdate', align: 'center' },
+    { label: 'Job',       align: 'left'   },
+    { label: 'Dept.',     align: 'left'   },
+    { label: 'Hired',     align: 'center' },
+    { label: 'Sep.',      align: 'center' },
   ];
 
   const selectCls = `
-    bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium
-    text-slate-700 outline-none transition-all duration-200 hover:border-slate-300
+    w-full bg-white rounded-xl border border-slate-200 pl-3 pr-8 py-2.5 text-sm font-medium
+    text-slate-700 outline-none appearance-none transition-all duration-200 hover:border-slate-300
     hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]
   `;
+
+  /** Wraps a <select> with a vertically-centred SVG chevron. */
+  const SelectWrap = ({ children, className = '' }) => {
+    const kids = Array.isArray(children) ? children : [children];
+    return (
+      <div className={`flex flex-col gap-1 ${className}`}>
+        {kids[0]}
+        <div className="relative">
+          {kids.slice(1)}
+          <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-400">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -231,40 +254,41 @@ export default function EmployeeListPage() {
         )}
       </header>
 
-      {/* FILTERS */}
+      {/* FILTERS + SORT BY — unified control panel */}
       <div className="relative rounded-[1.8rem] px-5 pt-4 pb-3 flex flex-col gap-3 border border-slate-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.10)] hover:-translate-y-0.5 transition-all duration-300 bg-white">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1 flex-1 min-w-[220px]">
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Search — plain input, no chevron wrapper needed */}
+          <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Search</label>
             <input
               type="text"
               placeholder="Name or employee ID"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={selectCls}
+              className="w-full bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
+          <SelectWrap className="flex-1 min-w-[110px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Gender</label>
             <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)} className={selectCls}>
               <option value="ALL">All</option>
               <option value="M">Male</option>
               <option value="F">Female</option>
             </select>
-          </div>
+          </SelectWrap>
 
-          <div className="flex flex-col gap-1">
+          <SelectWrap className="flex-1 min-w-[130px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Department</label>
             <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className={selectCls}>
-              <option value="ALL">All departments</option>
+              <option value="ALL">All depts</option>
               {deptOptions.map((d) => (
                 <option key={d} value={d}>{d}</option>
               ))}
             </select>
-          </div>
+          </SelectWrap>
 
-          <div className="flex flex-col gap-1">
+          <SelectWrap className="flex-1 min-w-[130px]">
             <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Job</label>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className={selectCls}>
               <option value="ALL">All titles</option>
@@ -272,21 +296,33 @@ export default function EmployeeListPage() {
                 <option key={j} value={j}>{j}</option>
               ))}
             </select>
-          </div>
+          </SelectWrap>
 
           {canSeeAdminMetadata && (
-            <div className="flex flex-col gap-1">
+            <SelectWrap className="flex-1 min-w-[110px]">
               <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Status</label>
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="ALL">All</option>
               </select>
-            </div>
+            </SelectWrap>
           )}
 
-          <div className="ml-auto">
-            <div className="bg-slate-100 rounded-full px-4 py-2 text-[12px] font-semibold text-slate-500 border border-slate-200">
+          {/* Sort By — unified sort control */}
+          <SelectWrap className="flex-1 min-w-[150px]">
+            <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 font-bold">Sort By</label>
+            <select value={sortKey} onChange={handleSortChange} className={selectCls}>
+              {SORT_OPTIONS.map((opt) => (
+                <option key={`${opt.field}__${opt.dir}`} value={`${opt.field}__${opt.dir}`}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </SelectWrap>
+
+          <div className="flex items-end shrink-0">
+            <div className="bg-slate-100 rounded-full px-4 py-2.5 text-[12px] font-semibold text-slate-500 border border-slate-200 whitespace-nowrap">
               {filtered.length} result{filtered.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -345,49 +381,32 @@ export default function EmployeeListPage() {
         <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-[0_4px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="flex flex-col gap-3">
             
-            {/* TABLE HEADER */}
+            {/* TABLE HEADER — flat text labels, no pills / shadows / sort arrows */}
             <div
               className={`
-                grid items-center gap-3 px-3 py-2
+                grid items-center gap-3 px-3 pt-3 pb-4
+                border-b border-[#bec9c8]/50
                 ${gridCols}
               `}
             >
-              {columns.map(({ field, label, align }) => (
-                <button
-                  key={field}
-                  onClick={() => toggleSort(field)}
+              {columns.map(({ label, align }) => (
+                <div
+                  key={label}
                   className={`
-                    flex items-center gap-1
-                    text-[11px]
-                    font-mono
-                    font-bold
-                    uppercase
-                    tracking-[0.18em]
-                    text-slate-500
-                    hover:text-slate-800
-                    bg-slate-50
-                    hover:bg-slate-100
-                    border border-slate-200
-                    rounded-full
-                    px-3 py-1.5
-                    transition-all duration-200
-                    hover:-translate-y-0.5
-                    hover:shadow-[0_8px_18px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.05)]
-                    shadow-[0_4px_10px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]
-                    ${align === 'center' ? 'justify-center w-full' : 'justify-start w-fit'}
+                    font-mono uppercase text-[#3f4948] font-medium tracking-[0.05em] text-xs
+                    ${align === 'center' ? 'text-center' : 'text-left'}
                   `}
                 >
                   {label}
-                  <SortIcon field={field} />
-                </button>
+                </div>
               ))}
 
               {canSeeAdminMetadata && (
                 <>
-                  <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
+                  <div className="font-mono uppercase text-[#3f4948] font-medium tracking-[0.05em] text-xs text-center">
                     Stat
                   </div>
-                  <div className="text-center text-[11px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">
+                  <div className="font-mono uppercase text-[#3f4948] font-medium tracking-[0.05em] text-xs text-center">
                     Stamp
                   </div>
                 </>
@@ -396,11 +415,20 @@ export default function EmployeeListPage() {
               {canManageRows && <div />}
             </div>
 
-            {/* ROWS */}
+            {/* ROWS — raised neumorphic card-rows (PRESERVED) */}
             {paginatedEmployees.map((emp) => {
               const isActive = emp.record_status === 'ACTIVE';
-              const isMenuOpen = openMenuId === emp.empno;
               const initials = `${emp.firstname?.[0] || ''}${emp.lastname?.[0] || ''}`.toUpperCase();
+
+              /* Split stamp string into date & time parts for stacked display. */
+              const stampParts = (() => {
+                if (!emp.stamp) return null;
+                const raw = String(emp.stamp).trim();
+                const dateMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+                const datePart = dateMatch ? dateMatch[1] : raw;
+                const timePart = dateMatch ? raw.slice(dateMatch[1].length).trim() : '';
+                return { date: datePart, time: timePart };
+              })();
 
               return (
                 <div
@@ -488,12 +516,23 @@ export default function EmployeeListPage() {
                     </div>
                   )}
 
-                  {/* Stamp */}
+                  {/* Stamp — stacked date / time+zone */}
                   {canSeeAdminMetadata && (
-                    <div className="text-center">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 truncate max-w-[60px]">
-                        {emp.stamp || '—'}
-                      </span>
+                    <div className="flex flex-col items-center">
+                      {stampParts ? (
+                        <>
+                          <span className="font-mono text-[11px] font-bold text-[#3f4948] leading-tight">
+                            {stampParts.date}
+                          </span>
+                          {stampParts.time && (
+                            <span className="font-mono text-[9px] font-medium text-[#6f7979] mt-0.5 leading-tight">
+                              {stampParts.time}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="font-mono text-[11px] text-slate-400">—</span>
+                      )}
                     </div>
                   )}
 
@@ -503,7 +542,7 @@ export default function EmployeeListPage() {
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          setOpenMenuId(isMenuOpen ? null : emp.empno);
+                          setOpenMenuId(openMenuId === emp.empno ? null : emp.empno);
                         }}
                         className="
                           w-9 h-9
@@ -518,7 +557,7 @@ export default function EmployeeListPage() {
                         <span className="material-symbols-outlined text-[20px]">more_vert</span>
                       </button>
 
-                      {isMenuOpen && (
+                      {openMenuId === emp.empno && (
                         <div
                           onClick={(event) => event.stopPropagation()}
                           className="

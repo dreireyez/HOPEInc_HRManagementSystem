@@ -124,7 +124,7 @@ export default function EmployeeDetailPage() {
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIykD8PTYcxDgvvQT3-xzyhg9iuk7PRsWeqHVYo1RAvfcy3PQ-IujbJ9Hw4BKNdOOEn6jNxCYdxyaO0nFkcsEJIqVEBLiYzaIE3p7SN1ZYNDPlF1x9Bu0QOyFe4_7XzK5KG92sPqFgSf8IHv_RN44n9Q0A77RoUUv8XX8UUuZZhdg4EG75KgL9NZ5ewYQGErN5boiq0OGcKj3YhCWKaK2YKi-UH6ObCammwWqaLYPDjSul0BG8eCp6Ez1Dwe4AWk1JVn1fFyXtHoqa"
                   />
                 </div>
-                <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-[var(--color-surface)] shadow-outset flex items-center justify-center">
+                <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-[var(--color-surface)] shadow-outset flex items-center justify-center">
                   <div className={`w-3 h-3 rounded-full shadow-[inset_1px_1px_2px_rgba(0,0,0,0.2)] ${profile.status === 'Active' ? 'bg-[#15803d]' : 'bg-[#ba1a1a]'}`}></div>
                 </div>
               </div>
