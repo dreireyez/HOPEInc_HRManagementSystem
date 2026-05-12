@@ -1,14 +1,40 @@
 import { useState, useEffect } from 'react';
 import JobHistoryModal from './modals/JobHistoryModal';
-import { getJobHistory } from '../services/jobHistoryService';
+import { getJobHistory, softDeleteJobHistory } from '../services/jobHistoryService';
 import { useRights } from '../context/UserRightsContext';
 
 export default function JobHistoryPanel({ empNo }) {
   const { can, currentUser } = useRights();
+  const userType = currentUser?.user_type || 'USER';
+  const showStamp = userType === 'ADMIN' || userType === 'SUPERADMIN';
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const refetch = async () => {
+    if (!empNo) return;
+    const { data } = await getJobHistory(empNo, currentUser?.user_type || 'USER');
+    setHistory(data || []);
+  };
+
+  const handleDelete = async (row) => {
+    if (!window.confirm(`Soft-delete job history row ${row.jobcode} @ ${row.effdate}?`)) return;
+    const { error: delErr } = await softDeleteJobHistory(row.empno, row.jobcode, row.effdate, currentUser?.userid);
+    if (delErr) alert('Delete failed: ' + delErr.message);
+    else refetch();
+  };
+
+  const openEdit = (row) => {
+    setEditingRow(row);
+    setIsModalOpen(true);
+  };
+
+  const openAdd = () => {
+    setEditingRow(null);
+    setIsModalOpen(true);
+  };
 
   // Fetch job history when empNo changes
   useEffect(() => {
@@ -46,12 +72,12 @@ export default function JobHistoryPanel({ empNo }) {
         
         {/* GATING: JH_ADD */}
         {can('JH_ADD') && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
+          <button
+            onClick={openAdd}
             className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 border border-primary/20 text-primary font-black text-xs hover:bg-primary hover:text-white transition-all"
           >
             <span className="material-symbols-outlined text-sm">add</span>
-            Add Record
+            Add Job History
           </button>
         )}
       </div>
@@ -86,17 +112,20 @@ export default function JobHistoryPanel({ empNo }) {
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Department</th>
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Effective Date</th>
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500">Salary</th>
+                {showStamp && (
+                  <th data-testid="stamp-header" className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[#B71BCF]">Stamp</th>
+                )}
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {history.map((row, idx) => {
-                const jobCode = row.jobCode ?? row.job_code ?? 'N/A';
-                const deptCode = row.deptCode ?? row.dept_code ?? 'N/A';
-                const effDate = row.effDate ?? row.eff_date ?? null;
-                const empNo = row.empNo ?? row.emp_no ?? '';
+                const jobCode = row.jobcode ?? 'N/A';
+                const deptCode = row.deptcode ?? 'N/A';
+                const effDate = row.effdate ?? null;
+                const empNoVal = row.empno ?? '';
                 return (
-                <tr key={`${empNo}-${jobCode}-${effDate}-${idx}`} className="group hover:bg-white/[0.02] transition-colors">
+                <tr key={`${empNoVal}-${jobCode}-${effDate}-${idx}`} className="group hover:bg-white/[0.02] transition-colors">
                   <td className="px-8 py-6">
                     <div className="font-bold text-white text-base">{jobCode}</div>
                     {idx === 0 && <p className="text-[9px] text-primary font-black uppercase tracking-widest">Current</p>}
@@ -106,19 +135,20 @@ export default function JobHistoryPanel({ empNo }) {
                     <p className="text-sm font-black text-white">{effDate ? new Date(effDate).toLocaleDateString() : 'N/A'}</p>
                   </td>
                   <td className="px-8 py-6 font-bold text-white">${row.salary ? Number(row.salary).toLocaleString() : '0'}</td>
+                  {showStamp && (
+                    <td data-testid="stamp-cell" className="px-8 py-6 text-zinc-500 text-[11px] font-mono">{row.stamp || '-'}</td>
+                  )}
                   <td className="px-8 py-6 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {/* Rubric: Edit gated by JH_EDIT */}
+                    <div className="flex justify-end gap-1">
                       {can('JH_EDIT') && (
-                        <button className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all"><span className="material-symbols-outlined">edit</span></button>
+                        <button onClick={() => openEdit(row)} className="p-2 text-zinc-500 hover:text-white">
+                          <span className="material-symbols-outlined">edit</span>
+                        </button>
                       )}
-                      {/* Rubric: Delete gated by JH_DEL */}
                       {can('JH_DEL') && (
-                        <button className="p-2 text-error hover:bg-error/10 rounded-xl transition-all"><span className="material-symbols-outlined">delete</span></button>
-                      )}
-                      {/* Fallback for users with no write access */}
-                      {!can('JH_EDIT') && !can('JH_DEL') && (
-                        <span className="text-[10px] text-zinc-700 italic font-bold">VIEW ONLY</span>
+                        <button onClick={() => handleDelete(row)} className="p-2 text-error hover:text-red-300">
+                          <span className="material-symbols-outlined">delete_sweep</span>
+                        </button>
                       )}
                     </div>
                   </td>
@@ -130,17 +160,14 @@ export default function JobHistoryPanel({ empNo }) {
         )}
       </div>
 
-      <JobHistoryModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <JobHistoryModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingRow(null); }}
         empNo={empNo}
+        initialData={editingRow}
         onSuccess={() => {
           setIsModalOpen(false);
-          // Re-fetch job history after adding
-          const refetch = async () => {
-            const { data } = await getJobHistory(empNo, currentUser?.user_type || 'USER');
-            setHistory(data || []);
-          };
+          setEditingRow(null);
           refetch();
         }}
       />

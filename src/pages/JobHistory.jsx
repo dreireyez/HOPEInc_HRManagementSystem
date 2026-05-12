@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRights } from '../context/UserRightsContext';
 import { getAllJobHistory } from '../services/jobHistoryService';
+import { getDepts } from '../services/departmentService';
 
 /**
  * JobHistory Page — Audit trail for all position and salary changes.
@@ -8,13 +9,19 @@ import { getAllJobHistory } from '../services/jobHistoryService';
  */
 export default function JobHistory() {
   const { can, currentUser } = useRights();
+  const userType = currentUser?.user_type || 'USER';
+  const showStamp = userType === 'ADMIN' || userType === 'SUPERADMIN';
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState('eff_date');
+  const [sortField, setSortField] = useState('empno');
   const [sortDir, setSortDir] = useState('desc');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [depts, setDepts] = useState([]);
+  const [deptFilter, setDeptFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -30,6 +37,11 @@ export default function JobHistory() {
     if (currentUser) fetchAll();
   }, [currentUser]);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    getDepts(currentUser?.user_type || 'USER').then(({ data }) => setDepts(data || []));
+  }, [currentUser]);
+
   // Helper to read fields supporting both camelCase and snake_case
   const f = (row, camel, snake) => row[camel] ?? row[snake] ?? '';
 
@@ -41,11 +53,14 @@ export default function JobHistory() {
   const filtered = history
     .filter(item => {
       if (statusFilter !== 'ALL' && item.record_status !== statusFilter) return false;
+      if (deptFilter && item.deptcode !== deptFilter) return false;
+      if (dateFrom && item.effdate && item.effdate < dateFrom) return false;
+      if (dateTo && item.effdate && item.effdate > dateTo) return false;
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
-      const empNo = String(f(item, 'empNo', 'emp_no'));
-      const jobCode = f(item, 'jobCode', 'job_code').toLowerCase();
-      const deptCode = f(item, 'deptCode', 'dept_code').toLowerCase();
+      const empNo = String(item.empno ?? '');
+      const jobCode = (item.jobcode ?? '').toLowerCase();
+      const deptCode = (item.deptcode ?? '').toLowerCase();
       return empNo.includes(q) || jobCode.includes(q) || deptCode.includes(q);
     })
     .sort((a, b) => {
@@ -72,6 +87,36 @@ export default function JobHistory() {
           <p className="text-zinc-500 text-sm font-medium">Audit trail for all position and salary changes.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Primary filter: Department */}
+          <select
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            className="bg-[#1A1A24] border border-white/5 rounded-full py-2.5 px-4 text-sm text-white outline-none appearance-none font-bold min-w-[160px] [color-scheme:dark]"
+          >
+            <option value="">All Departments</option>
+            {depts.map(d => (
+              <option key={d.deptcode} value={d.deptcode}>
+                {d.deptcode} — {d.deptname}
+              </option>
+            ))}
+          </select>
+
+          {/* Secondary filters: Date range */}
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            title="Effective date from"
+            className="bg-[#1A1A24] border border-white/5 rounded-full py-2.5 px-4 text-sm text-white outline-none font-bold [color-scheme:dark]"
+          />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            title="Effective date to"
+            className="bg-[#1A1A24] border border-white/5 rounded-full py-2.5 px-4 text-sm text-white outline-none font-bold [color-scheme:dark]"
+          />
+
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-sm">search</span>
             <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -96,34 +141,34 @@ export default function JobHistory() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-white/5 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
               <tr>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('emp_no')}>Employee No<SortIcon field="emp_no" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('job_code')}>Job Code<SortIcon field="job_code" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('dept_code')}>Dept Code<SortIcon field="dept_code" /></th>
-                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('eff_date')}>Effective Date<SortIcon field="eff_date" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('empno')}>Employee No<SortIcon field="empno" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('jobcode')}>Job Code<SortIcon field="jobcode" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('deptcode')}>Dept Code<SortIcon field="deptcode" /></th>
+                <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('effdate')}>Effective Date<SortIcon field="effdate" /></th>
                 <th className="px-6 py-4 cursor-pointer select-none" onClick={() => toggleSort('salary')}>Salary<SortIcon field="salary" /></th>
-                {can('ADM_USER') && <th className="px-6 py-4 text-[#B71BCF]">Status</th>}
+                {showStamp && <th data-testid="stamp-header" className="px-6 py-4 text-[#B71BCF]">Stamp</th>}
               </tr>
             </thead>
             <tbody className="text-sm">
               {filtered.length > 0 ? filtered.map((item, idx) => (
                 <tr key={item.id || idx} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-4 font-mono text-xs text-primary font-bold">#{f(item, 'empNo', 'emp_no')}</td>
-                  <td className="px-6 py-4 font-bold text-white">{f(item, 'jobCode', 'job_code') || 'N/A'}</td>
-                  <td className="px-6 py-4 text-zinc-400 font-medium">{f(item, 'deptCode', 'dept_code') || 'N/A'}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-primary font-bold">#{item.empno ?? ''}</td>
+                  <td className="px-6 py-4 font-bold text-white">{item.jobcode || 'N/A'}</td>
+                  <td className="px-6 py-4 text-zinc-400 font-medium">{item.deptcode || 'N/A'}</td>
                   <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
-                    {(f(item, 'effDate', 'eff_date')) ? new Date(f(item, 'effDate', 'eff_date')).toLocaleDateString() : 'N/A'}
+                    {item.effdate ? new Date(item.effdate).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 font-bold text-white">${item.salary ? Number(item.salary).toLocaleString() : '0'}</td>
-                  {can('ADM_USER') && (
-                    <td className="px-6 py-4">
-                      <span className={`font-mono text-[10px] px-2 py-1 rounded border ${
-                        item.record_status === 'ACTIVE' ? 'text-green-400 bg-green-400/5 border-green-400/20' : 'text-red-400 bg-red-400/5 border-red-400/20'
-                      }`}>{item.record_status}</span>
-                    </td>
+                  {showStamp && (
+                    <td data-testid="stamp-cell" className="px-6 py-4 text-zinc-500 font-mono text-[10px]">{item.stamp || '-'}</td>
                   )}
                 </tr>
               )) : (
-                <tr><td colSpan="6" className="px-6 py-12 text-center text-zinc-500 font-bold">No job history records found.</td></tr>
+                <tr><td colSpan="6" className="px-6 py-12 text-center text-zinc-500 font-bold">
+                  {deptFilter || dateFrom || dateTo || searchQuery
+                    ? 'No records match the active filters.'
+                    : 'No job history records found.'}
+                </td></tr>
               )}
             </tbody>
           </table>

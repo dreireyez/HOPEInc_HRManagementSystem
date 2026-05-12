@@ -1,4 +1,5 @@
 import supabase from '../lib/supabaseClient.js';
+import { makeStamp } from '../utils/makeStamp.js';
 
 /**
  * Fetches departments from the database.
@@ -65,7 +66,7 @@ export const updateDept = async (deptCode, updateData) => {
     const { data, error } = await supabase
       .from('department')
       .update(updateData)
-      .eq('deptCode', deptCode)
+      .eq('deptcode', deptCode)
       .select();
 
     if (error) {
@@ -84,12 +85,15 @@ export const updateDept = async (deptCode, updateData) => {
  * @param {string} deptCode - Department code to soft delete
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const softDeleteDept = async (deptCode) => {
+export const softDeleteDept = async (deptCode, userId) => {
   try {
     const { data, error } = await supabase
       .from('department')
-      .update({ record_status: 'INACTIVE' })
-      .eq('deptCode', deptCode)
+      .update({
+        record_status: 'INACTIVE',
+        stamp: makeStamp('DEACTIVATED', userId)
+      })
+      .eq('deptcode', deptCode)
       .select();
 
     if (error) {
@@ -108,12 +112,15 @@ export const softDeleteDept = async (deptCode) => {
  * @param {string} deptCode - Department code to recover
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const recoverDept = async (deptCode) => {
+export const recoverDept = async (deptCode, userId) => {
   try {
     const { data, error } = await supabase
       .from('department')
-      .update({ record_status: 'ACTIVE' })
-      .eq('deptCode', deptCode)
+      .update({
+        record_status: 'ACTIVE',
+        stamp: makeStamp('REACTIVATED', userId)
+      })
+      .eq('deptcode', deptCode)
       .select();
 
     if (error) {

@@ -1,4 +1,5 @@
 import supabase from '../lib/supabaseClient.js';
+import { makeStamp } from '../utils/makeStamp.js';
 
 /**
  * Fetches jobs from the database.
@@ -65,7 +66,7 @@ export const updateJob = async (jobCode, updateData) => {
     const { data, error } = await supabase
       .from('job')
       .update(updateData)
-      .eq('jobCode', jobCode)
+      .eq('jobcode', jobCode)
       .select();
 
     if (error) {
@@ -84,12 +85,15 @@ export const updateJob = async (jobCode, updateData) => {
  * @param {string} jobCode - Job code to soft delete
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const softDeleteJob = async (jobCode) => {
+export const softDeleteJob = async (jobCode, userId) => {
   try {
     const { data, error } = await supabase
       .from('job')
-      .update({ record_status: 'INACTIVE' })
-      .eq('jobCode', jobCode)
+      .update({
+        record_status: 'INACTIVE',
+        stamp: makeStamp('DEACTIVATED', userId)
+      })
+      .eq('jobcode', jobCode)
       .select();
 
     if (error) {
@@ -108,12 +112,15 @@ export const softDeleteJob = async (jobCode) => {
  * @param {string} jobCode - Job code to recover
  * @returns {Promise<{data: Object | null, error: null | Error}>}
  */
-export const recoverJob = async (jobCode) => {
+export const recoverJob = async (jobCode, userId) => {
   try {
     const { data, error } = await supabase
       .from('job')
-      .update({ record_status: 'ACTIVE' })
-      .eq('jobCode', jobCode)
+      .update({
+        record_status: 'ACTIVE',
+        stamp: makeStamp('REACTIVATED', userId)
+      })
+      .eq('jobcode', jobCode)
       .select();
 
     if (error) {

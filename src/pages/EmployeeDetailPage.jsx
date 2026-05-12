@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import JobHistoryPanel from '../components/JobHistoryPanel';
 import { getEmployee } from '../services/employeeService';
+import { getEmployeeCurrentJobById, getEmployeeFullHistory, downloadPDF } from '../services/reportService';
 import { useRights } from '../context/UserRightsContext';
 
 export default function EmployeeDetailPage() {
@@ -10,25 +11,50 @@ export default function EmployeeDetailPage() {
   const { currentUser } = useRights();
   const userRole = currentUser?.user_type || 'USER';
   const [employee, setEmployee] = useState(null);
+  const [currentJob, setCurrentJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
-  // Fetch employee data on mount or when id changes
+  const handleExport = async () => {
+    if (!employee) return;
+    setExportLoading(true);
+    try {
+      const { data: history } = await getEmployeeFullHistory(employee.empno);
+      const rows = (history || []).map(r => [
+        r.eff_date || r.effdate || 'N/A',
+        r.jobcode || r.job_code || 'N/A',
+        r.jobdesc || r.job_desc || 'N/A',
+        r.deptname || r.dept_name || r.deptcode || 'N/A',
+        `$${(r.salary || 0).toLocaleString()}`,
+      ]);
+      downloadPDF(
+        ['Effective Date', 'Job Code', 'Job Description', 'Department', 'Salary'],
+        rows,
+        `Employee Details: ${employee.firstname} ${employee.lastname} (#${employee.empno})`,
+        `employee-${employee.empno}-details.pdf`
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchEmployeeData = async () => {
       if (!id) return;
-      
       setLoading(true);
       setError(null);
-      
       try {
-        const { data, error: fetchError } = await getEmployee(id, currentUser?.user_type || 'USER');
-        
-        if (fetchError) {
-          setError(fetchError.message);
+        const [empRes, jobRes] = await Promise.all([
+          getEmployee(id, currentUser?.user_type || 'USER'),
+          getEmployeeCurrentJobById(id),
+        ]);
+        if (empRes.error) {
+          setError(empRes.error.message);
           setEmployee(null);
         } else {
-          setEmployee(data);
+          setEmployee(empRes.data);
+          setCurrentJob(jobRes.data || null);
         }
       } catch (err) {
         setError(err.message);
@@ -37,20 +63,20 @@ export default function EmployeeDetailPage() {
         setLoading(false);
       }
     };
-
     fetchEmployeeData();
   }, [id]);
 
-  // Default profile structure for display
   const profile = employee ? {
     id: employee.empno,
     firstName: employee.firstname || 'N/A',
     lastName: employee.lastname || 'N/A',
-    email: employee.email || 'Not provided',
-    location: employee.location || 'Not specified',
-    joined: employee.hiredate || 'Not specified',
-    role: employee.job_title || 'Not assigned',
-    dept: employee.dept || 'Not assigned',
+    joined: employee.hiredate
+      ? new Date(employee.hiredate + 'T00:00:00').toLocaleDateString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        })
+      : 'Not specified',
+    role: currentJob?.jobdesc || currentJob?.job_desc || 'Not assigned',
+    dept: currentJob?.deptname || currentJob?.dept_name || 'Not assigned',
     status: employee.record_status === 'ACTIVE' ? 'Active' : 'Inactive',
     empNo: employee.empno
   } : null;
@@ -116,20 +142,12 @@ export default function EmployeeDetailPage() {
                   </span>
                 </div>
                 
-                <p className="text-xl text-zinc-400 font-bold">{profile.role} — <span className="text-zinc-600">{profile.dept}</span></p>
+                <p className="text-xl text-zinc-400 font-bold">{profile.role}</p>
                 
                 <div className="flex flex-wrap justify-center md:justify-start gap-6 pt-2">
                   <div className="flex items-center gap-2 text-zinc-500 text-sm font-bold">
-                    <span className="material-symbols-outlined text-primary text-lg">mail</span>
-                    {profile.email}
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-500 text-sm font-bold">
-                    <span className="material-symbols-outlined text-primary text-lg">location_on</span>
-                    {profile.location}
-                  </div>
-                  <div className="flex items-center gap-2 text-zinc-500 text-sm font-bold">
-                    <span className="material-symbols-outlined text-primary text-lg">calendar_month</span>
-                    Joined {profile.joined}
+                    <span className="material-symbols-outlined text-primary text-lg">calendar_today</span>
+                    Hired on {profile.joined}
                   </div>
                 </div>
               </div>
@@ -137,10 +155,9 @@ export default function EmployeeDetailPage() {
           </section>
 
           {/* Bento Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             {[
               { label: "Employee No", val: profile.empNo, icon: "badge", sub: "System ID" },
-              { label: "Status", val: profile.status, icon: "verified", sub: "Current Record Status" },
               { label: "Department", val: profile.dept, icon: "apartment", sub: "Assigned Department" }
             ].map((stat, i) => (
               <div key={i} className="bg-[#1A1A24] p-8 rounded-[2rem] border border-white/5">
@@ -152,6 +169,21 @@ export default function EmployeeDetailPage() {
                 <p className="text-[11px] text-zinc-600 font-bold">{stat.sub}</p>
               </div>
             ))}
+          </div>
+
+          {/* Export Employee Details */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="flex items-center gap-2 bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {exportLoading
+                ? <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"></div>
+                : <span className="material-symbols-outlined text-base">download</span>
+              }
+              {exportLoading ? 'Generating...' : 'Export Employee Details'}
+            </button>
           </div>
 
           {/* THE EMBEDDED PANEL */}

@@ -3,7 +3,7 @@ import { useRights } from '../context/UserRightsContext';
 import supabase from '../lib/supabaseClient';
 
 export default function Layout() {
-  const { can, rights } = useRights();
+  const { can, rights, currentUser } = useRights();
   const navigate = useNavigate();
 
   // Task: Implement real logout logic
@@ -17,9 +17,8 @@ export default function Layout() {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'grid_view' },
     { name: 'Employees', path: '/employees', icon: 'badge'},
-    { name: 'History', path: '/jobhistory', icon: 'history'},
     { name: 'Jobs', path: '/jobs', icon: 'work'},
-    { name: 'Units', path: '/departments', icon: 'domain'},
+    { name: 'Departments', path: '/departments', icon: 'domain'},
     { name: 'Reports', path: '/reports', icon: 'analytics'},
     { name: 'Trash', path: '/deleted-items', icon: 'delete', right: 'ADM_USER'},
   ];
@@ -43,12 +42,6 @@ export default function Layout() {
         </div>
         
         <div className="flex items-center gap-4">
-          <button 
-            onClick={handleLogout}
-            className="bg-white/5 border border-white/10 text-white px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:bg-white/10 transition-all"
-          >
-            Logout
-          </button>
           <div className="h-10 w-10 rounded-full border-2 border-[#2E5BFF] overflow-hidden hidden sm:block">
              <img alt="User" src="https://ui-avatars.com/api/?name=User&background=2E5BFF&color=fff" className="w-full h-full object-cover"/>
           </div>
@@ -68,8 +61,8 @@ export default function Layout() {
               to={item.path}
               className={({ isActive }) => `
                 flex items-center gap-4 px-6 py-3.5 rounded-full transition-all duration-200
-                ${isActive 
-                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20' 
+                ${isActive
+                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20'
                   : 'text-zinc-500 hover:text-white hover:bg-white/5'}
               `}
             >
@@ -77,13 +70,13 @@ export default function Layout() {
               <span className="text-sm font-black">{item.name}</span>
             </NavLink>
           ))}
-          {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
+          {(currentUser?.user_type === 'ADMIN' || currentUser?.user_type === 'SUPERADMIN') && (
             <NavLink
               to="/admin"
               className={({ isActive }) => `
                 flex items-center gap-4 px-6 py-3.5 rounded-full transition-all duration-200
-                ${isActive 
-                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20' 
+                ${isActive
+                  ? 'bg-gradient-to-r from-[#2E5BFF] to-[#B71BCF] text-white shadow-xl shadow-[#8A3DFF]/20'
                   : 'text-zinc-500 hover:text-white hover:bg-white/5'}
               `}
             >
@@ -92,6 +85,13 @@ export default function Layout() {
             </NavLink>
           )}
         </nav>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-4 px-6 py-3.5 rounded-full text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 mt-2"
+        >
+          <span className="material-symbols-outlined">logout</span>
+          <span className="text-sm font-black">Logout</span>
+        </button>
       </aside>
 
       {/* FIXED BOTTOM NAV: Mobile */}
@@ -106,9 +106,9 @@ export default function Layout() {
             <span className="text-[9px] font-black uppercase">{item.name}</span>
           </NavLink>
         ))}
-        {(rights?.ADM_USER === 1 || rights?.ADM_USER === true) && (
-          <NavLink 
-            to="/admin" 
+        {(currentUser?.user_type === 'ADMIN' || currentUser?.user_type === 'SUPERADMIN') && (
+          <NavLink
+            to="/admin"
             className={({ isActive }) => `flex flex-col items-center gap-1 ${isActive ? 'text-[#8A3DFF]' : 'text-zinc-500'}`}
           >
             <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
