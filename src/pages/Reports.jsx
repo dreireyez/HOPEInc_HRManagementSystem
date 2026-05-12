@@ -5,6 +5,8 @@ import { useRights } from '../context/UserRightsContext';
 import { Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
 import { Card } from '../components/ui/Card';
 import { Pagination } from '../components/ui/Pagination';
+import { exportTableToPDF, exportEmployeeProfilePDF } from '../utils/pdfExport';
+import { getHeadcount, getDeptName, calculateTotalHeadcount, calculateHeadcountPercentage } from '../utils/reportAggregations';
 
 const PAGE_SIZE = 10;
 
@@ -22,8 +24,6 @@ export default function Reports() {
   const [headcountPage, setHeadcountPage] = useState(1);
   const [salaryPage, setSalaryPage] = useState(1);
 
-  const getHeadcount = (row) => row.activeheadcount ?? row.headcount ?? row.count ?? 0;
-  const getDeptName = (row) => row.deptname ?? row.dept_name ?? 'Unknown';
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -65,7 +65,7 @@ export default function Reports() {
     fetchHistory();
   }, [selectedEmpNo]);
 
-  const totalHeadcount = headcountData.reduce((sum, d) => sum + getHeadcount(d), 0);
+  const totalHeadcount = calculateTotalHeadcount(headcountData);
   const paginatedHeadcount = headcountData.slice((headcountPage - 1) * PAGE_SIZE, headcountPage * PAGE_SIZE);
   const paginatedSalary = salaryData.slice((salaryPage - 1) * PAGE_SIZE, salaryPage * PAGE_SIZE);
 
@@ -77,11 +77,62 @@ export default function Reports() {
     setSalaryPage((page) => Math.min(page, Math.max(1, Math.ceil(salaryData.length / PAGE_SIZE))));
   }, [salaryData]);
 
+  const handleExportPDF = () => {
+    if (activeTab === 'Headcount') {
+      const columns = ['Department', 'Total', '% of Total'];
+      const data = headcountData.map(item => {
+        const count = getHeadcount(item);
+        const pct = calculateHeadcountPercentage(count, totalHeadcount);
+        return [getDeptName(item), count, `${pct}%`];
+      });
+      exportTableToPDF('Headcount Distribution Report', columns, data, 'Headcount_Report.pdf');
+    } else if (activeTab === 'Salary Summary') {
+      const columns = ['Job Description', 'Min Salary', 'Max Salary', 'Avg Salary'];
+      const data = salaryData.map(row => [
+        row.job_desc || row.jobdesc || row.job_title || 'N/A',
+        `$${(row.min_salary || row.minsalary || 0).toLocaleString()}`,
+        `$${(row.max_salary || row.maxsalary || 0).toLocaleString()}`,
+        `$${(row.avg_salary || row.avgsalary || 0).toLocaleString()}`
+      ]);
+      exportTableToPDF('Salary Bands Overview', columns, data, 'Salary_Summary_Report.pdf');
+    } else if (activeTab === 'Employee History') {
+      if (!selectedEmpNo || historyData.length === 0) return;
+      const employee = employees.find(e => e.empno === selectedEmpNo);
+      if (!employee) return;
+      
+      const profile = {
+        id: employee.empno,
+        firstName: employee.firstname || 'N/A',
+        lastName: employee.lastname || 'N/A',
+        email: employee.email || 'Not provided',
+        phone: employee.phone_number || 'Not provided',
+        gender: employee.gender || 'N/A',
+        birthdate: employee.birthdate ? new Date(employee.birthdate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified',
+        joined: employee.hiredate ? new Date(employee.hiredate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified',
+        role: employee.jobdesc || 'Not assigned',
+        dept: employee.deptname || 'Not assigned',
+        manager: employee.managerName || 'Unassigned',
+        status: employee.record_status === 'ACTIVE' ? 'Active' : 'Inactive',
+        empNo: employee.empno
+      };
+
+      exportEmployeeProfilePDF(profile, historyData);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">Analytics & Reports</h1>
-        <p className="text-sm text-[var(--color-on-surface-variant)] mt-1">Organizational insights.</p>
+      <header className="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-on-surface)] tracking-tight">Analytics & Reports</h1>
+          <p className="text-sm text-[var(--color-on-surface-variant)] mt-1">Organizational insights.</p>
+        </div>
+        <button 
+          onClick={handleExportPDF}
+          className="px-6 py-2 rounded-lg bg-[var(--color-primary-container)] shadow-outset hover:shadow-outset-hover hover:shadow-glow active:shadow-inset font-mono text-[11px] uppercase tracking-widest font-bold text-white hover:bg-[var(--color-primary)] transition-all cursor-pointer flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-[16px]">download</span> Export PDF
+        </button>
       </header>
 
       <div className="flex flex-wrap gap-2 rounded-2xl surface-panel p-2">
@@ -108,18 +159,18 @@ export default function Reports() {
 
       {!loading && activeTab === 'Headcount' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2" padding="md">
+          <Card className="lg:col-span-3" padding="md">
             <h2 className="text-lg font-bold text-[var(--color-on-surface)] mb-6">Headcount Distribution</h2>
             <div className="space-y-5">
               {headcountData.length > 0 ? (
                 headcountData.map((item, idx) => {
                   const count = getHeadcount(item);
-                  const pct = totalHeadcount > 0 ? ((count / totalHeadcount) * 100).toFixed(1) : 0;
+                  const pct = calculateHeadcountPercentage(count, totalHeadcount);
                   return (
                     <div key={item.deptcode || getDeptName(item) || idx} className="interactive-surface rounded-2xl p-4">
                       <div className="flex justify-between text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)] mb-2">
                         <span>{getDeptName(item)}</span>
-                        <span className="text-[var(--color-on-surface)]">{count} Employees</span>
+                        <span className="text-[var(--color-on-surface)]">{count} Employees ({pct}%)</span>
                       </div>
                       <div className="h-2.5 w-full bg-[var(--color-surface-container)] rounded-full overflow-hidden">
                         <div className="h-full bg-[var(--color-primary-container)] rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%` }}></div>
@@ -131,41 +182,6 @@ export default function Reports() {
                 <p className="text-[var(--color-on-surface-variant)] font-medium text-sm">No headcount data available.</p>
               )}
             </div>
-          </Card>
-
-          <Card className="lg:col-span-1" padding="md">
-            <h2 className="text-lg font-bold text-[var(--color-on-surface)] mb-4">Summary</h2>
-            <Table className="shadow-none border-none bg-transparent" dense>
-              <Thead>
-                <Tr>
-                  <Th>Dept</Th>
-                  <Th className="text-right">Total</Th>
-                  <Th className="text-right">%</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {paginatedHeadcount.map((item, idx) => {
-                  const count = getHeadcount(item);
-                  const pct = totalHeadcount > 0 ? ((count / totalHeadcount) * 100).toFixed(1) : '0';
-                  return (
-                    <Tr key={item.deptcode || idx}>
-                      <Td>
-                        <div className="font-bold text-[var(--color-on-surface)]">{getDeptName(item)}</div>
-                      </Td>
-                      <Td className="text-right font-mono font-bold">{count}</Td>
-                      <Td className="text-right text-[var(--color-on-surface-variant)] font-mono">{pct}%</Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
-            <Pagination
-              currentPage={headcountPage}
-              totalItems={headcountData.length}
-              pageSize={PAGE_SIZE}
-              onPageChange={setHeadcountPage}
-              className="mt-4"
-            />
           </Card>
         </div>
       )}
