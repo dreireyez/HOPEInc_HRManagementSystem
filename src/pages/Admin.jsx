@@ -48,21 +48,57 @@ function StatCard({ icon, label, value, accent, loading }) {
 
 function RoleSelector({ currentRole, onSelect, disabled }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const containerRef = useRef(null);
+  const menuRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const roles = ['USER', 'ADMIN'];
+
+  const updateMenuPosition = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const menuWidth = 176; // Matches w-44
+    const horizontalPadding = 8;
+    const maxLeft = window.innerWidth - menuWidth - horizontalPadding;
+    const clampedLeft = Math.max(horizontalPadding, Math.min(rect.left, maxLeft));
+
+    setMenuPosition({
+      top: rect.bottom + 6,
+      left: clampedLeft,
+    });
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
+      const clickedOutsideTrigger = containerRef.current && !containerRef.current.contains(e.target);
+      const clickedOutsideMenu = menuRef.current && !menuRef.current.contains(e.target);
+
+      if (clickedOutsideTrigger && clickedOutsideMenu) {
         setOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+
+    updateMenuPosition();
+
+    const handleReposition = () => updateMenuPosition();
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [open, updateMenuPosition]);
+
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={containerRef}>
       <button
         type="button"
         disabled={disabled}
@@ -76,8 +112,12 @@ function RoleSelector({ currentRole, onSelect, disabled }) {
         <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>expand_more</span>
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 w-44 rounded-2xl modal-panel p-1.5 animate-in zoom-in-95 fade-in">
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed z-[120] w-44 rounded-2xl modal-panel p-1.5 animate-in zoom-in-95 fade-in"
+          style={{ top: menuPosition.top, left: menuPosition.left }}
+        >
           {roles.map((role) => (
             <button
               key={role}
@@ -101,7 +141,8 @@ function RoleSelector({ currentRole, onSelect, disabled }) {
               )}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
