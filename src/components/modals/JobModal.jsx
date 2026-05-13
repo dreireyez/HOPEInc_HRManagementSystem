@@ -104,7 +104,7 @@ export default function JobModal({ isOpen, onClose, initialData, onSuccess }) {
             placeholder="J0001"
             icon="fingerprint"
             maxLength={5}
-            hint="5 character unique identifier."
+            hint="4 character unique identifier."
             required
             disabled={!!initialData}
           />
