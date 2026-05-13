@@ -1,10 +1,9 @@
-import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import Reports from '../Reports';
 import { useRights } from '../../context/UserRightsContext';
 import { getHeadcountByDept, getSalarySummaryByJob, getEmployeeFullHistory } from '../../services/reportService';
 import { getEmployees } from '../../services/employeeService';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 vi.mock('../../context/UserRightsContext');
 vi.mock('../../services/reportService');
