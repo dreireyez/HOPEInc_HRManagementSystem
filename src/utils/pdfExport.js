@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export const exportTableToPDF = (title, columns, data, filename = 'report.pdf') => {
   const doc = new jsPDF();
@@ -11,7 +11,7 @@ export const exportTableToPDF = (title, columns, data, filename = 'report.pdf') 
   doc.setTextColor(100);
   doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 36,
     head: [columns],
     body: data,
@@ -40,7 +40,7 @@ export const exportEmployeeProfilePDF = (profile, historyData) => {
   doc.text(`Employee ID: EMP-${profile.empNo} | Status: ${profile.status}`, 14, 36);
 
   // Profile Details Box
-  doc.autoTable({
+  autoTable(doc, {
     startY: 42,
     head: [['Profile Information', '']],
     body: [
@@ -74,7 +74,7 @@ export const exportEmployeeProfilePDF = (profile, historyData) => {
   ]);
 
   if (historyRows.length > 0) {
-    doc.autoTable({
+    autoTable(doc, {
       startY: finalY + 18,
       head: [historyColumns],
       body: historyRows,

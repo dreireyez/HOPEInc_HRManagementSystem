@@ -163,7 +163,7 @@ export default function Reports() {
             <h2 className="text-lg font-bold text-[var(--color-on-surface)] mb-6">Headcount Distribution</h2>
             <div className="space-y-5">
               {headcountData.length > 0 ? (
-                headcountData.map((item, idx) => {
+                paginatedHeadcount.map((item, idx) => {
                   const count = getHeadcount(item);
                   const pct = calculateHeadcountPercentage(count, totalHeadcount);
                   return (
@@ -182,6 +182,13 @@ export default function Reports() {
                 <p className="text-[var(--color-on-surface-variant)] font-medium text-sm">No headcount data available.</p>
               )}
             </div>
+            <Pagination
+              currentPage={headcountPage}
+              totalItems={headcountData.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setHeadcountPage}
+              className="mt-6"
+            />
           </Card>
         </div>
       )}
